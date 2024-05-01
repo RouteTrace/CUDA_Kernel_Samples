@@ -16,7 +16,7 @@ rm -rf test
 mkdir -p test
 for((i=0;i<=1;i++)); do
     echo -n "test kernel: ${i}..."
-    file_name="./test/test_kernel_${i}.txt"
+    file_name="./test/test_kernel_${i}.log"
     ./build/main ${i} > ${file_name}
     if [ $? -ne 0 ]; then
         echo "kernel${i} error"

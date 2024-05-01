@@ -48,8 +48,8 @@ def plot(num1, num2, y1, y2, save_dir):
 
 def main(args):
     root = os.path.dirname(os.path.abspath(__file__))
-    data1 = parse_file(os.path.join(root, f'../test/test_kernel_{args.one}.txt'))
-    data2 = parse_file(os.path.join(root, f'../test/test_kernel_{args.another}.txt'))
+    data1 = parse_file(os.path.join(root, f'../test/test_kernel_{args.one}.log'))
+    data2 = parse_file(os.path.join(root, f'../test/test_kernel_{args.another}.log'))
     plot(args.one, args.another, data1, data2, args.save_dir)
 
 

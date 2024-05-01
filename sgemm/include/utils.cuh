@@ -6,7 +6,7 @@
 #include <sys/time.h>
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
-#include "kernel1.cuh"
+#include "kernel.cuh"
 
 // macro
 #define REPEAT_TIMES 10
