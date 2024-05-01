@@ -4,7 +4,7 @@
 
 ## 开发流程
 1. 在src下编写kernel.cu
-2. 在include编写对应头文件，并在include/kernel.cuh中包含该头文件
+2. 在include下编写对应头文件，并在include/kernel.cuh中包含该头文件
 3. 在src/utils.cu的call_kernel函数中调用编写的kernel
 4. 编译：
 ```bash
@@ -25,9 +25,9 @@ pip install matplotlib
 bash tools/test.sh  # 日志保存在./test, 图片保存在./images
 ```
 
-## Kernel1：Native 实现
+## Kernel1：Native 实现 (global memory)
 <div align=center>
-<img src="./images/kernel_culas_vs_1.png" width = "700"/>
+<img src="./images/kernel_cublas_vs_1.png" width = "700"/>
 </div>
 
 ### 代码
@@ -58,10 +58,17 @@ void sgemm_v1(int M, int N, int K, float alpha, float *A, float *B, float beta, 
 1. **访存比低**：每次迭代需要进行一次FMA（乘累加）和两次全局内存读取，计算访存比1/2；
 2. **访存延迟高**：访问**全局内存**，**延迟高**，需要几百个时钟周期 (cycle)
 3. **较低的访存比无法有效隐藏访存延迟**
-4. 访存量：矩阵C的每个元素计算需要访问2K个单精度浮点数，完成全部计算需要 $2*K*M*N$
+4. 访存量：矩阵C的每个元素计算需要访问2K个单精度浮点数，完成全部计算需要 $2\times K\times M\times N$
 5. 相同位置元素被重复读取（C中同一行元素计算共享A中同一行元素，C中同一列元素计算共享B中同一列元素）
 
-> 动态全局内存是在运行时动态分配的内存，使用 `cudaMalloc()` 和 `cudaFree()` 函数来分配和释放。
+> 动态全局内存是在运行时动态分配的内存，**所有线程**可见（主机端也可见），使用 `cudaMalloc()` 和 `cudaFree()` 函数来分配和释放。
+
+## Kernel2：从 global memory 到 shared memory
+<div align=center>
+<img src="./images/kernel_1_vs_2.png" width = "500"/><img src="./images/kernel_cublas_vs_2.png" width = "500"/>
+</div>
 
 # 参考
 1. https://github.com/wangzyon/NVIDIA_SGEMM_PRACTICE
+2. https://zhuanlan.zhihu.com/p/410278370
+3. https://zhuanlan.zhihu.com/p/435908830

@@ -36,6 +36,9 @@ for((i=0;i<=${kernel_count};i++)); do
     if [ ${i} -gt 0 ]; then
         echo -n "Done. Ploting..."
         python3 tools/plot.py 0 ${i}
+        if [ ${i} -gt 0 ]; then
+            python3 tools/plot.py $(expr $i - 1) ${i}
+        fi
     fi
     echo "Done."
 done

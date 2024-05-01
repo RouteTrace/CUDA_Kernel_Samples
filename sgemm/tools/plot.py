@@ -23,7 +23,7 @@ def plot(num1, num2, y1, y2, save_dir):
     x = [(i + 1) * 256 for i in range(len(y1))]
     fig = plt.figure(figsize=(12, 10))
     if num1 == 0:
-        num1 = "culas"
+        num1 = "cublas"
 
     plt.plot(x, y1, c='k', linewidth=2, label=f"kernel_{num1}")
     plt.plot(x, y2, c='b', linewidth=2, label=f"kernel_{num2}")
