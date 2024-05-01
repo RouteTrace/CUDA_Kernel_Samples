@@ -26,7 +26,9 @@ bash tools/test.sh  # 日志保存在./test, 图片保存在./images
 ```
 
 ## Kernel1：Native 实现
-![](./images/kernel_culas_vs_1.png)
+<div align=center>
+<img src="./images/kernel_culas_vs_1.png" width = "700"/>
+</div>
 
 ### 代码
 ```cpp
@@ -43,11 +45,12 @@ void sgemm_v1(int M, int N, int K, float alpha, float *A, float *B, float beta, 
     C[id_y * N + id_x] = alpha * tmp + beta * C[id_y * N + id_x];
 }
 ```
+
 ### 计算步骤 (图解)
 将每个逻辑线程与矩阵C的每一个元素相对应，每个线程负责C中一个元素的计算：
-
-<img src="./images/image.png" width = "500" align=center />
-<img src="./images/image-1.png" width = "500" align=center />
+<div align=center>
+<img src="./images/image.png" width = "500"/><img src="./images/image-1.png" width = "500"/>
+</div>
 
 ### 分析
 未经过优化的矩阵乘法性能不足cuBLAS的1/10，具体分析如下：
@@ -59,5 +62,6 @@ void sgemm_v1(int M, int N, int K, float alpha, float *A, float *B, float beta, 
 5. 相同位置元素被重复读取（C中同一行元素计算共享A中同一行元素，C中同一列元素计算共享B中同一列元素）
 
 > 动态全局内存是在运行时动态分配的内存，使用 `cudaMalloc()` 和 `cudaFree()` 函数来分配和释放。
+
 # 参考
 1. https://github.com/wangzyon/NVIDIA_SGEMM_PRACTICE
