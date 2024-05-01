@@ -39,9 +39,11 @@ int main(int argc, char **argv) {
         float *h_C = (float *) malloc(mem_size_M);
         float *h_C_ref = (float *) malloc(mem_size_M);
 
-        // 4. random init elements in A and B
+        // 4. random init elements in A, B, C
         randomize_matrix(h_A, size_M);
         randomize_matrix(h_B, size_M);
+        randomize_matrix(h_C, size_M);
+        copy_matrix(h_C, h_C_ref, size_M);
 
         // 5. cuda malloc for A, B, C, C_ref(cuBLAS) and copy A, B from host to device
         float *d_A, *d_B, *d_C, *d_C_ref;
@@ -52,7 +54,7 @@ int main(int argc, char **argv) {
         cudaCheck(cudaMemcpy(d_A, h_A, mem_size_M, cudaMemcpyHostToDevice));
         cudaCheck(cudaMemcpy(d_B, h_B, mem_size_M, cudaMemcpyHostToDevice));
 
-        // 6 call custom kernel and cublas, and verify correctness
+        // 6. call custom kernel and cublas, and verify correctness
         if (kernel_num != 0) {
             call_kernel(kernel_num, false, m, n, k, alpha, d_A, d_B, beta, d_C);
             call_kernel(0, false, m, n, k, alpha, d_A, d_B, beta, d_C);
@@ -64,7 +66,7 @@ int main(int argc, char **argv) {
                 exit(EXIT_FAILURE);
             }
         }
-        // 7 time record
+        // 7. time record
         float total_time = call_kernel(kernel_num, true, m, n, k, alpha, d_A, d_B, beta, d_C);;
         total_time /= 1000.;
         printf("m=n=k=%lu\n", m);

@@ -11,11 +11,20 @@ if [ ! -f "build/main" ]; then
     cd --
 fi
 
-# 2. test
+# 2. get the nummber of custom kernel
+include_folder="include"
+kernel_count=$(find "$include_folder" -type f -name "kernel*.cuh" | grep -v "kernel.cuh" | wc -l)
+echo "found ${kernel_count} custom kernel"
+
+# 3. test
 rm -rf test
 mkdir -p test
-for((i=0;i<=1;i++)); do
-    echo -n "test kernel: ${i}..."
+for((i=0;i<=${kernel_count};i++)); do
+    if [ "$i" -eq 0 ]; then
+        echo -n "test cuBLAS..."
+    else
+        echo -n "test custom kernel: ${i}..."
+    fi
     file_name="./test/test_kernel_${i}.log"
     ./build/main ${i} > ${file_name}
     if [ $? -ne 0 ]; then

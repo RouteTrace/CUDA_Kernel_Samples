@@ -41,7 +41,7 @@ void CudaDeviceInfo();                                         // 打印CUDA信�
 
 // matrix
 void randomize_matrix(float *mat, size_t N);         // 随机初始化矩阵
-void copy_matrix(float *src, float *dest, int N);    // 复制矩阵
+void copy_matrix(float *src, float *dest, size_t N);    // 复制矩阵
 void print_matrix(const float *A, int M, int N);     // 打印矩阵
 bool verify_matrix(float *mat1, float *mat2, size_t N); // 验证矩阵
 

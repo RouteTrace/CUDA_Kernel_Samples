@@ -61,12 +61,12 @@ void randomize_matrix(float *mat, size_t N) {
     }
 }
 
-void copy_matrix(float *src, float *dest, int N) {
+void copy_matrix(float *src, float *dest, size_t N) {
     int i;
     for (i = 0; src + i && dest + i && i < N; i++)
         *(dest + i) = *(src + i);
     if (i != N)
-        printf("copy failed at %d while there are %d elements in total.\n", i, N);
+        printf("copy failed at %d while there are %lu elements in total.\n", i, N);
 }
 
 void print_matrix(const float *A, int M, int N) {
