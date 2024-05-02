@@ -43,9 +43,6 @@ __global__ void sgemm_v2(int M, int N, int K, float alpha, float *A, float *B, f
 }
 
 // template instantiation declaration
-template __global__ void sgemm_v2<2>(int M, int N, int K, float alpha, float *A, float *B, float beta, float *C);
-template __global__ void sgemm_v2<4>(int M, int N, int K, float alpha, float *A, float *B, float beta, float *C);
-template __global__ void sgemm_v2<8>(int M, int N, int K, float alpha, float *A, float *B, float beta, float *C);
 template __global__ void sgemm_v2<16>(int M, int N, int K, float alpha, float *A, float *B, float beta, float *C);
 template __global__ void sgemm_v2<32>(int M, int N, int K, float alpha, float *A, float *B, float beta, float *C);
 template __global__ void sgemm_v2<64>(int M, int N, int K, float alpha, float *A, float *B, float beta, float *C);

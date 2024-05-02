@@ -108,6 +108,11 @@ void sgemm_v1(int M, int N, int K, float alpha, float *A, float *B, float beta, 
 1. **访存量显著减小**：完成C中所有元素的计算一共需要从global memory中读取 $\frac{M}{BM}\times \frac{N}{BN} \times \frac{K}{BK} \times (BM \times BK+BK \times BN)=M \times N \times K \times (\frac{1}{BM}+ \frac{1}{BN})$，访存量是 kernel1 的 $0.5 \times(\frac{1}{BM}+ \frac{1}{BN})$，代码中使用BM=BN=32，此时访存量变为原来的 1/32；
 2. **访存比没有变化**：每次计算仍然需要2个访存指令和1个计算指令。
 
+> 从上面分析可以看出，增加block的大小（BM和BN）可以进一步降低全局内存的访问量，但是也会增加共享内存的使用量。因为每个SM的共享内存数量是一定的，如果在单个线程块中分配过度的共享内存，将会限制线程束的数量 (比如固定线程块中的线程数量不变，而增加线程块的共享内存的分配量，那么分配给一个SM的线程块数量将减少，线程总数减少，线程束减少)。
+
+## Kernel3
+
+
 # 参考
 1. https://github.com/wangzyon/NVIDIA_SGEMM_PRACTICE
 2. https://zhuanlan.zhihu.com/p/410278370
