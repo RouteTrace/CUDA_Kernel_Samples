@@ -96,9 +96,9 @@ void sgemm_v1(int M, int N, int K, float alpha, float *A, float *B, float beta, 
 
 如上图左边所示，矩阵乘时，矩阵C的每一个行中的结果在计算时，都要重复读取矩阵A中的同一行（同理，矩阵C的每一个列中的结果在计算时，都要重复读取矩阵B中的同一列）。
 
-利用这个特点，可以把A、B、C按 $BM\times BK$，$BK\times BN$，$BM\times BN$ 的切分，三个矩阵形成$\frac{M}{BM}\times \frac{K}{BK}$，$\frac{K}{BK}\times \frac{N}{BN}$，$\frac{M}{BM}\times \frac{N}{BN}$的网格，如上图右边所示：
+利用这个特点，可以把A、B、C按 $BM\times BK$， $BK\times BN$， $BM\times BN$ 的切分，三个矩阵形成 $\frac{M}{BM}\times \frac{K}{BK}$， $\frac{K}{BK}\times \frac{N}{BN}$， $\frac{M}{BM}\times \frac{N}{BN}$ 的网格，如上图右边所示：
 1. 在block中申请等同于块大小的共享内存，每个 block 从全局内存 (global memory) 中读取数据并保存在共享内存中
-2. 由于块的尺寸大于$1\times 1$，所以读取全局内存的次数会按块的尺寸成倍减小
+2. 由于块的尺寸大于 $1\times 1$，所以读取全局内存的次数会按块的尺寸成倍减小
 3. 因为共享内存在一个 block 中是共享的，这样一个block内的元素在重复读取同一行（列）时，可以直接从共享内存中读取
 4. 尽管总的读取次数增加了（上图中全局内存的访问次数变为原来的一半，共享内存的访问次数等于native实现的读取次数），但是全局内存的访问次数显著减少，而共享内存的访问次数虽然很多但由于共享内存的访问延迟是远小于全局内存的，所以**总的访问延迟还是显著减小**的
 
