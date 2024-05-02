@@ -96,7 +96,7 @@ void sgemm_v1(int M, int N, int K, float alpha, float *A, float *B, float beta, 
 
 如上图左边所示，矩阵乘时，矩阵C的每一个行中的结果在计算时，都要重复读取矩阵A中的同一行（同理，矩阵C的每一个列中的结果在计算时，都要重复读取矩阵B中的同一列）。
 
-利用这个特点，可以把A、B、C按$BM\times BK$，$BK\times BN$，$BM\times BN$的切分，三个矩阵形成$\frac{M}{BM}\times \frac{K}{BK}$，$\frac{K}{BK}\times \frac{N}{BN}$，$\frac{M}{BM}\times \frac{N}{BN}$的网格，如上图右边所示：
+利用这个特点，可以把A、B、C按 $BM\times BK$，$BK\times BN$，$BM\times BN$ 的切分，三个矩阵形成$\frac{M}{BM}\times \frac{K}{BK}$，$\frac{K}{BK}\times \frac{N}{BN}$，$\frac{M}{BM}\times \frac{N}{BN}$的网格，如上图右边所示：
 1. 在block中申请等同于块大小的共享内存，每个 block 从全局内存 (global memory) 中读取数据并保存在共享内存中
 2. 由于块的尺寸大于$1\times 1$，所以读取全局内存的次数会按块的尺寸成倍减小
 3. 因为共享内存在一个 block 中是共享的，这样一个block内的元素在重复读取同一行（列）时，可以直接从共享内存中读取
@@ -105,7 +105,7 @@ void sgemm_v1(int M, int N, int K, float alpha, float *A, float *B, float beta, 
 ### 分析
 性能相比kernel1有所提升，但相比cuBLAS的实现，差距还是很大，具体分析如下：
 
-1. **访存量显著减小**：完成C中所有元素的计算一共需要从global memory中读取$\frac{M}{BM}\times \frac{N}{BN} \times \frac{K}{BK} \times (BM \times BK+BK \times BN)=M \times N \times K \times (\frac{1}{BM}+ \frac{1}{BN})$，访存量是 kernel1 的 $0.5 \times(\frac{1}{BM}+ \frac{1}{BN})$，代码中使用BM=BN=32，此时访存量变为原来的 1/32；
+1. **访存量显著减小**：完成C中所有元素的计算一共需要从global memory中读取 $\frac{M}{BM}\times \frac{N}{BN} \times \frac{K}{BK} \times (BM \times BK+BK \times BN)=M \times N \times K \times (\frac{1}{BM}+ \frac{1}{BN})$，访存量是 kernel1 的 $0.5 \times(\frac{1}{BM}+ \frac{1}{BN})$，代码中使用BM=BN=32，此时访存量变为原来的 1/32；
 2. **访存比没有变化**：每次计算仍然需要2个访存指令和1个计算指令。
 
 # 参考
