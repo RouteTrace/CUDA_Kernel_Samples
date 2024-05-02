@@ -41,7 +41,8 @@ bash tools/test.sh  # 日志保存在./test, 图片保存在./images
 ```
 
 ## CUDA名词解释
-- “访存量”（memory access）通常指的是GPU核心（CUDA核心）或线程所需从全局内存中读取或写入的数据量。
+- **访存量**”（memory access）：通常指的是GPU核心（CUDA核心）或线程所需从全局内存中读取或写入的数据量。
+- **计算访存比**：每秒计算量与每秒访存量之比。
 
 ## Kernel1：Native 实现 (global memory)
 <div align=center>
@@ -143,3 +144,4 @@ for (int i = 0; i < BK; i++) {
 1. https://github.com/wangzyon/NVIDIA_SGEMM_PRACTICE
 2. https://zhuanlan.zhihu.com/p/410278370
 3. https://zhuanlan.zhihu.com/p/435908830
+4. https://blog.csdn.net/u013013023/article/details/127245181
