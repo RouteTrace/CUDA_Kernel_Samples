@@ -24,7 +24,7 @@ __global__ void sgemm_v2(int M, int N, int K, float alpha, float *A, float *B, f
     C = &C[by * BM * N + bx * BN];
 
     float tmp = 0.;
-    for (int k = 0; k < K; k += BK) {
+    for (int k = 0; k < K; k += BK) {  // 窗口滑动
         // 缓存A_tile和B_tile
         As[ty * BK + tx] = A[ty * K + tx];
         Bs[ty * BN + tx] = B[ty * N + tx];

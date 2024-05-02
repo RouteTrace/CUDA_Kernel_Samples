@@ -111,6 +111,12 @@ void sgemm_v1(int M, int N, int K, float alpha, float *A, float *B, float beta, 
 > 从上面分析可以看出，增加block的大小（BM和BN）可以进一步降低全局内存的访问量，但是也会增加共享内存的使用量。因为每个SM的共享内存数量是一定的，如果在单个线程块中分配过度的共享内存，将会限制线程束的数量 (比如固定线程块中的线程数量不变，而增加线程块的共享内存的分配量，那么分配给一个SM的线程块数量将减少，线程总数减少，线程束减少)。
 
 ## Kernel3
+<div align=center>
+<img src="./images/kernel_2_vs_3.png" width = "500"/><img src="./images/kernel_cublas_vs_3.png" width = "500"/>
+</div>
+
+### 计算
+> `pragma unroll` 用于展开循环（告诉编译器将循环体复制多次），好处是可以消除循环开销（如循环索引计算和循环终止检查等）
 
 
 # 参考
