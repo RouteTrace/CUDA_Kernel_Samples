@@ -105,7 +105,7 @@ void sgemm_v1(int M, int N, int K, float alpha, float *A, float *B, float beta, 
 ### 分析
 性能相比kernel1有所提升，但相比cuBLAS的实现，差距还是很大，具体分析如下：
 
-1. **访存量显著减小**：完成C中所有元素的计算一共需要从global memory中读取$\frac{M}{BM}\times \frac{N}{BN}\times \frac{K}{BK}\times (BM\times BK+BK\times BN)=M\times N \times K \times (\frac{1}{BM}+ \frac{1}{BN})$，访存量是 kernel1 的 $0.5\times(\frac{1}{BM}+ \frac{1}{BN})$，代码中使用BM=BN=32，此时访存量变为原来的 1/32；
+1. **访存量显著减小**：完成C中所有元素的计算一共需要从global memory中读取$\frac{M}{BM}\times \frac{N}{BN} \times \frac{K}{BK} \times (BM \times BK+BK \times BN)=M \times N \times K \times (\frac{1}{BM}+ \frac{1}{BN})$，访存量是 kernel1 的 $0.5 \times(\frac{1}{BM}+ \frac{1}{BN})$，代码中使用BM=BN=32，此时访存量变为原来的 1/32；
 2. **访存比没有变化**：每次计算仍然需要2个访存指令和1个计算指令。
 
 # 参考
