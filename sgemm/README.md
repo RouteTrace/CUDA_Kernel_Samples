@@ -1,6 +1,21 @@
 # CUDA SGEMM 优化
 ## 开发环境
 设备：NVIDIA GeForce GTX 1050
+```
+Device ID: 0
+       *Number of SMs: 5
+       Compute Capability Major: 6
+       Compute Capability Minor: 1
+       memoryBusWidth: 128
+       *maxThreadsPerBlock: 1024
+       maxThreadsPerMultiProcessor: 2048
+       *totalGlobalMem: 2047M
+       sharedMemPerBlock: 48KB
+       *sharedMemPerMultiprocessor: 96KB
+       totalConstMem: 64KB
+       *multiProcessorCount: 5
+       *Warp Size: 32
+```
 
 ## 开发流程
 1. 在src下编写kernel.cu
@@ -24,6 +39,9 @@ make
 pip install matplotlib
 bash tools/test.sh  # 日志保存在./test, 图片保存在./images
 ```
+
+## CUDA名词解释
+- “访存量”（memory access）通常指的是GPU核心（CUDA核心）或线程所需从全局内存中读取或写入的数据量。
 
 ## Kernel1：Native 实现 (global memory)
 <div align=center>
@@ -67,6 +85,28 @@ void sgemm_v1(int M, int N, int K, float alpha, float *A, float *B, float beta, 
 <div align=center>
 <img src="./images/kernel_1_vs_2.png" width = "500"/><img src="./images/kernel_cublas_vs_2.png" width = "500"/>
 </div>
+
+### 计算步骤 (图解)
+<div align=center>
+<img src="./images/describe_kernel_2.png" width = "400"/>
+</div>
+<div align=center>
+<img src="./images/image-3.png" width = "800"/>
+</div>
+
+如上图左边所示，矩阵乘时，矩阵C的每一个行中的结果在计算时，都要重复读取矩阵A中的同一行（同理，矩阵C的每一个列中的结果在计算时，都要重复读取矩阵B中的同一列）。
+
+利用这个特点，可以把A、B、C按$BM\times BK$，$BK\times BN$，$BM\times BN$的切分，三个矩阵形成$\frac{M}{BM}\times \frac{K}{BK}$，$\frac{K}{BK}\times \frac{N}{BN}$，$\frac{M}{BM}\times \frac{N}{BN}$的网格，如上图右边所示：
+1. 在block中申请等同于块大小的共享内存，每个 block 从全局内存 (global memory) 中读取数据并保存在共享内存中
+2. 由于块的尺寸大于$1\times 1$，所以读取全局内存的次数会按块的尺寸成倍减小
+3. 因为共享内存在一个 block 中是共享的，这样一个block内的元素在重复读取同一行（列）时，可以直接从共享内存中读取
+4. 尽管总的读取次数增加了（上图中全局内存的访问次数变为原来的一半，共享内存的访问次数等于native实现的读取次数），但是全局内存的访问次数显著减少，而共享内存的访问次数虽然很多但由于共享内存的访问延迟是远小于全局内存的，所以**总的访问延迟还是显著减小**的
+
+### 分析
+性能相比kernel1有所提升，但相比cuBLAS的实现，差距还是很大，具体分析如下：
+
+1. **访存量显著减小**：完成C中所有元素的计算一共需要从global memory中读取$\frac{M}{BM}\times \frac{N}{BN}\times \frac{K}{BK}\times (BM\times BK+BK\times BN)=M\times N \times K \times (\frac{1}{BM}+ \frac{1}{BN})$，访存量是 kernel1 的 $0.5\times(\frac{1}{BM}+ \frac{1}{BN})$，代码中使用BM=BN=32，此时访存量变为原来的 1/32；
+2. **访存比没有变化**：每次计算仍然需要2个访存指令和1个计算指令。
 
 # 参考
 1. https://github.com/wangzyon/NVIDIA_SGEMM_PRACTICE
