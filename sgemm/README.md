@@ -115,9 +115,29 @@ void sgemm_v1(int M, int N, int K, float alpha, float *A, float *B, float beta, 
 <img src="./images/kernel_2_vs_3.png" width = "500"/><img src="./images/kernel_cublas_vs_3.png" width = "500"/>
 </div>
 
-### 计算
+### 计算步骤
 > `pragma unroll` 用于展开循环（告诉编译器将循环体复制多次），好处是可以消除循环开销（如循环索引计算和循环终止检查等）
 
+<div align=center>
+<img src="./images/image-4.png" width = "800"/>
+</div>
+
+1. 引入thread tile，即一个线程负责block中多个元素的计算，TM和TN分别表示thread tile的高和宽。上图中TM=2，TN=1。
+2. 定义了一个一维的长度为TM+1的 `tmp`，其中`tmp[TM]`用于缓存Bs中的元素到寄存器中，访问几乎无时延。
+3. 当TM=8时，下面的代码中，外层循环每进行1次，访问1次Bs，然后访问8次As，并计算8次，计算-访存比是8:9，比原始版本1:2高了不少。
+```cpp
+for (int i = 0; i < BK; i++) {
+    tmp[TM] = Bs[tx + i * BN]; // 额外的一个寄存器，避免反复从共享内存中读取Bs[tx + i * BN]
+    #pragma unroll  // 循环展开，增加指令并行度
+    for (int j = 0; j < TM; j++) {  // 8次循环
+        tmp[j] += As[(ty + j) * BK + i] * tmp[TM];
+    }
+}
+```
+
+### 分析
+1. 全局内存访存量：相比于初始版本，通过对 $64\times 64$ block size进行缓存，访存量降至1/64；
+2. 计算-访存比：提高至8:9，可以有效隐藏访存延迟；
 
 # 参考
 1. https://github.com/wangzyon/NVIDIA_SGEMM_PRACTICE
