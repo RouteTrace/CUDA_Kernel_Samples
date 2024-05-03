@@ -155,6 +155,10 @@ for (int i = 0; i < BK; i++) {
 <img src="./images/kernel_5_vs_6.png" width = "500"/><img src="./images/kernel_cublas_vs_6.png" width = "500"/>
 </div>
 
+> In almost all cases vectorized loads are preferable to scalar loads. Note however that using vectorized loads **increases register pressure** and **reduces overall parallelism**. So if you have a kernel that is already register limited or has very low parallelism, you may want to stick to scalar loads. Also, as discussed earlier, if your pointer is **not aligned** or your **data type size in bytes is not a power of two** you cannot use vectorized loads.
+
+>Vectorized loads are a fundamental CUDA optimization that you should use when possible, because they **increase bandwidth**, reduce **instruction count**, and **reduce latency**. In this post, I’ve shown how you can easily incorporate vectorized loads into existing kernels with relatively few changes.
+
 ## Kernel7：数据预取
 <div align=center>
 <img src="./images/kernel_6_vs_7.png" width = "500"/><img src="./images/kernel_cublas_vs_7.png" width = "500"/>
@@ -168,3 +172,5 @@ for (int i = 0; i < BK; i++) {
 5. bank conflict: https://blog.csdn.net/xysjj/article/details/103885803
 6. bank conflict: https://segmentfault.com/a/1190000007533157
 7. https://github.com/yzhaiustc/Optimizing-SGEMM-on-NVIDIA-Turing-GPUs
+8. vectorized loads: https://developer.nvidia.com/blog/cuda-pro-tip-increase-performance-with-vectorized-memory-access/
+9. vectorized loads: https://www.zhihu.com/question/574968879/answer/3005751704

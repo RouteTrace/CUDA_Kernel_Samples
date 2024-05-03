@@ -1,5 +1,12 @@
 #include "kernel6.cuh"
 
+/*
+dim3 blockDim(256);
+dim3 gridDim(CEIL_DIV(M, 128), CEIL_DIV(N, 128));
+sgemm_v7<128, 128, 8, 8, 8><<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
+*/
+
+
 template<const int BM,
          const int BN,
          const int BK,
@@ -21,18 +28,18 @@ __global__ void sgemm_v6(int M, int N, int K, float alpha, float *A, float *B, f
     __shared__ float Bs[BK * BN];
 
 
-    const int ldg_a_num = BK * BM / thread_num / 4; // 每个线程搬运4个浮点数，完成搬运至As需要所有线程搬运ldg_a_num轮
-    const int ldg_b_num = BK * BN / thread_num / 4; // 每个线程搬运4个浮点数，完成搬运至Bs需要所有线程搬运ldg_b_num轮
+    const int ldg_a_num = BK * BM / thread_num / 4; // 每个线程搬运4个浮点数，完成搬运至As需要每个线程搬运ldg_a_num轮
+    const int ldg_b_num = BK * BN / thread_num / 4; // 每个线程搬运4个浮点数，完成搬运至Bs需要每个线程搬运ldg_b_num轮
 
-    int a_tile_row = threadIdx.x / (BK / 4); // 每行4个字节作为一个内存块，当前线程负责第a_tile_row行的第a_tile_col个内存块的搬运
+    int a_tile_row = threadIdx.x / (BK / 4); // 每行4个浮点数作为一个内存块，当前线程负责第a_tile_row行的第a_tile_col个内存块的搬运
     int a_tile_col = threadIdx.x % (BK / 4) * 4;
-    int a_tile_stride = BM / ldg_a_num; // 一共BM行，搬运ldg_a_num轮，每论搬运a_tile_stride行
+    int a_tile_stride = BM / ldg_a_num; // 一共BM行，搬运ldg_a_num轮，每轮需要搬运a_tile_stride行
 
-    int b_tile_row = threadIdx.x / (BN / 4); // 每行4个字节作为一个内存块，当前线程负责第b_tile_row行的第b_tile_col个内存块的搬运
+    int b_tile_row = threadIdx.x / (BN / 4); // 每行4个浮点数作为一个内存块，当前线程负责第b_tile_row行的第b_tile_col个内存块的搬运
     int b_tile_col = threadIdx.x % (BN / 4) * 4;
-    int b_tile_stride = BK / ldg_b_num; // 一共BK行，搬运ldg_b_num轮，每论搬运b_tile_stride行
+    int b_tile_stride = BK / ldg_b_num; // 一共BK行，搬运ldg_b_num轮，每轮需要搬运b_tile_stride行
 
-    float accum[TM][TN] = {0.}; // 每个线程负责TM*TN个元素，则需要申请TM*TN个寄存器保存累加值，额外的一个寄存器用于缓存；
+    float accum[TM][TN] = {0.}; // 每个线程负责TM*TN个元素，则需要申请TM*TN个寄存器保存累加值
 
     // 计算ldg_a_num的所有参数必须全部是const，否则不能用来申明数组大小
     float ldg_a_reg[4 * ldg_a_num] = {0.}; // 每个线程搬运ldg_a_num轮，寄存器缓存ldg_a_num个float4元素，用于转置As矩阵
