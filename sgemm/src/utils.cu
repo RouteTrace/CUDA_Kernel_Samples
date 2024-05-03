@@ -122,6 +122,26 @@ float call_kernel(int kernel_num, bool record, int M, int N, int K, float alpha,
         dim3 blockDim(512);
         dim3 gridDim(CEIL_DIV(M, 64), CEIL_DIV(N, 64));
         total_time = TIME_RECORD(repeat_times, ([&]{sgemm_v3<64, 64, 8, 8><<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);}));
+    }
+    else if (kernel_num == 4) {
+        dim3 blockDim(256);
+        dim3 gridDim(CEIL_DIV(M, 128), CEIL_DIV(N, 128));
+        total_time = TIME_RECORD(repeat_times, ([&]{sgemm_v4<128, 128, 8, 8, 8><<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);}));
+    }
+    else if (kernel_num == 5) {
+        dim3 blockDim(256);
+        dim3 gridDim(CEIL_DIV(M, 128), CEIL_DIV(N, 128));
+        total_time = TIME_RECORD(repeat_times, ([&]{sgemm_v5<128, 128, 8, 8, 8><<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);}));
+    }
+    else if (kernel_num == 6) {
+        dim3 blockDim(256);
+        dim3 gridDim(CEIL_DIV(M, 128), CEIL_DIV(N, 128));
+        total_time = TIME_RECORD(repeat_times, ([&]{sgemm_v6<128, 128, 8, 8, 8><<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);}));
+    }
+    else if (kernel_num == 7) {
+        dim3 blockDim(256);
+        dim3 gridDim(CEIL_DIV(M, 128), CEIL_DIV(N, 128));
+        total_time = TIME_RECORD(repeat_times, ([&]{sgemm_v7<128, 128, 8, 8, 8><<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);}));
     } else {
         printf("Error: kernel %d not found.\n", kernel_num);
         exit(EXIT_FAILURE);

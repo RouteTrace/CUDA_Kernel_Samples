@@ -35,13 +35,13 @@ __global__ void sgemm_v3(int M, int N, int K, float alpha, float *A, float *B, f
     int b_tile_stride = thread_num / BN;
 
     float tmp[TM + 1] = {0.};  // 每个线程负责TM个元素，则需要申请TM个寄存器保存累加值，额外的一个寄存器用于缓存
-    #pragma unroll  // 循环展开，增加指令并行度
+#pragma unroll
     for (int k = 0; k < K; k += BK) {  // 窗口滑动
-        #pragma unroll
+#pragma unroll
         for (int i = 0; i < BM; i += a_tile_stride) {
             As[(a_tile_row + i) * BK + a_tile_col] = A[(a_tile_row + i) * K + a_tile_col];
         }
-        #pragma unroll
+#pragma unroll
         for (int i = 0; i < BK; i += b_tile_stride) {
             Bs[(b_tile_row + i) * BN + b_tile_col] = B[(b_tile_row + i) * N + b_tile_col];
         }
@@ -49,17 +49,17 @@ __global__ void sgemm_v3(int M, int N, int K, float alpha, float *A, float *B, f
         // 移动A,B指针到下一个矩阵块
         A += BK;
         B += BK * N;
-        #pragma unroll
+#pragma unroll
         for (int i = 0; i < BK; i++) {
             tmp[TM] = Bs[tx + i * BN];  // 额外的一个寄存器，避免反复从共享内存中读取Bs[tx + i * BN]
-            #pragma unroll
+#pragma unroll
             for (int j = 0; j < TM; j++) {
                 tmp[j] += As[(ty + j) * BK + i] * tmp[TM];
             }
         }
         __syncthreads();
     }
-    #pragma unroll
+#pragma unroll
     for (int j = 0; j < TM; j++) {
         C[(ty + j) * N + tx] = alpha * tmp[j] + beta * C[(ty + j) * N + tx];
     }

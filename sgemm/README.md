@@ -111,7 +111,7 @@ void sgemm_v1(int M, int N, int K, float alpha, float *A, float *B, float beta, 
 
 > 从上面分析可以看出，增加block的大小（BM和BN）可以进一步降低全局内存的访问量，但是也会增加共享内存的使用量。因为每个SM的共享内存数量是一定的，如果在单个线程块中分配过度的共享内存，将会限制线程束的数量 (比如固定线程块中的线程数量不变，而增加线程块的共享内存的分配量，那么分配给一个SM的线程块数量将减少，线程总数减少，线程束减少)。
 
-## Kernel3
+## Kernel3：引入一维thread tile和寄存器
 <div align=center>
 <img src="./images/kernel_2_vs_3.png" width = "500"/><img src="./images/kernel_cublas_vs_3.png" width = "500"/>
 </div>
@@ -140,8 +140,31 @@ for (int i = 0; i < BK; i++) {
 1. 全局内存访存量：相比于初始版本，通过对 $64\times 64$ block size进行缓存，访存量降至1/64；
 2. 计算-访存比：提高至8:9，可以有效隐藏访存延迟；
 
+## Kernel4：引入二维thread tile
+<div align=center>
+<img src="./images/kernel_3_vs_4.png" width = "500"/><img src="./images/kernel_cublas_vs_4.png" width = "500"/>
+</div>
+
+## Kernel5：引入二维thread tile，并用寄存器避免重复读取shared memory
+<div align=center>
+<img src="./images/kernel_4_vs_5.png" width = "500"/><img src="./images/kernel_cublas_vs_5.png" width = "500"/>
+</div>
+
+## Kernel6：向量内存指令FLOAT4优化
+<div align=center>
+<img src="./images/kernel_5_vs_6.png" width = "500"/><img src="./images/kernel_cublas_vs_6.png" width = "500"/>
+</div>
+
+## Kernel7：数据预取
+<div align=center>
+<img src="./images/kernel_6_vs_7.png" width = "500"/><img src="./images/kernel_cublas_vs_7.png" width = "500"/>
+</div>
+
 # 参考
 1. https://github.com/wangzyon/NVIDIA_SGEMM_PRACTICE
 2. https://zhuanlan.zhihu.com/p/410278370
 3. https://zhuanlan.zhihu.com/p/435908830
 4. https://blog.csdn.net/u013013023/article/details/127245181
+5. bank conflict: https://blog.csdn.net/xysjj/article/details/103885803
+6. bank conflict: https://segmentfault.com/a/1190000007533157
+7. https://github.com/yzhaiustc/Optimizing-SGEMM-on-NVIDIA-Turing-GPUs
