@@ -155,9 +155,35 @@ for (int i = 0; i < BK; i++) {
 <img src="./images/kernel_5_vs_6.png" width = "500"/><img src="./images/kernel_cublas_vs_6.png" width = "500"/>
 </div>
 
+### 计算步骤
+<div align=center>
+<img src="./images/image6-1.png" width = "800"/>
+</div>
+因为拷贝是以float4为单位进行的，为了便于后续的乘法计算（保证数据连续），在A拷贝到As时，对As进行转置，Bs则不用：
+<div align=center>
+<img src="./images/image6-2.png" width = "800"/>
+</div>
+<div align=center>
+<img src="./images/image6-3.png" width = "500"/>
+</div>
+
+### 分析
+在kernel5的基础上，引入`float4`类型，这个是CUDA的扩展类型，被用于“向量化存取”，可以将4个浮点数为一组进行拷贝，减少了内存指令。
+
+使用向量化存取需要注意以下几点：
+1. float4等类型会增加寄存器压力，减少总体并行性
+2. 如果指针没有对齐或者数据类型的尺寸不是2的幂次，则不能使用
+
 > In almost all cases vectorized loads are preferable to scalar loads. Note however that using vectorized loads **increases register pressure** and **reduces overall parallelism**. So if you have a kernel that is already register limited or has very low parallelism, you may want to stick to scalar loads. Also, as discussed earlier, if your pointer is **not aligned** or your **data type size in bytes is not a power of two** you cannot use vectorized loads.
 
->Vectorized loads are a fundamental CUDA optimization that you should use when possible, because they **increase bandwidth**, reduce **instruction count**, and **reduce latency**. In this post, I’ve shown how you can easily incorporate vectorized loads into existing kernels with relatively few changes.
+向量化存取有以下好处：
+1. 增加了带宽
+2. 减少了内存指令（4次内存拷贝指令→1次内存拷贝指令）
+3. 减少了延迟
+
+> Vectorized loads are a fundamental CUDA optimization that you should use when possible, because they **increase bandwidth**, reduce **instruction count**, and **reduce latency**. In this post, I’ve shown how you can easily incorporate vectorized loads into existing kernels with relatively few changes.
+
+更多细节可以阅读[官方blog](https://developer.nvidia.com/blog/cuda-pro-tip-increase-performance-with-vectorized-memory-access/)。
 
 ## Kernel7：数据预取
 <div align=center>
