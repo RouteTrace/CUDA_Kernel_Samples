@@ -1,12 +1,5 @@
 #include "kernel6.cuh"
 
-/*
-dim3 blockDim(256);
-dim3 gridDim(CEIL_DIV(M, 128), CEIL_DIV(N, 128));
-sgemm_v7<128, 128, 8, 8, 8><<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
-*/
-
-
 template<const int BM,
          const int BN,
          const int BK,

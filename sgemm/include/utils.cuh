@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <random>
 #include <sys/time.h>
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
@@ -16,7 +17,6 @@
 # define TIME_RECORD(N, func)                                                                   \
     [&] {                                                                                       \
         float total_time = 0;                                                                   \
-        if (N == 0) return total_time;                                                          \
         for (int repeat = 0; repeat <= N; ++repeat) {                                           \
             cudaEvent_t start, stop;                                                            \
             cudaCheck(cudaEventCreate(&start));                                                 \
@@ -32,6 +32,7 @@
             cudaCheck(cudaEventDestroy(start));                                                 \
             cudaCheck(cudaEventDestroy(stop));                                                  \
         }                                                                                       \
+        if (N == 0) return (float)0.0;                                                                 \
         return total_time;                                                                      \
     }()
 
@@ -42,7 +43,7 @@ void CudaDeviceInfo();                                         // 打印CUDA信�
 // matrix
 void randomize_matrix(float *mat, size_t N);         // 随机初始化矩阵
 void copy_matrix(float *src, float *dest, size_t N);    // 复制矩阵
-void print_matrix(const float *A, int M, int N);     // 打印矩阵
+void print_matrix(const float *A, size_t M, size_t N);     // 打印矩阵
 bool verify_matrix(float *mat1, float *mat2, size_t N); // 验证矩阵
 
 // call kernel

@@ -63,23 +63,15 @@ __global__ void sgemm_v7(int M, int N, int K, float alpha, float *A, float *B, f
         FETCH_FLOAT4(Bs[0][OFFSET(b_tile_row + i, b_tile_col, BN)]) =
                 FETCH_FLOAT4(B[OFFSET(b_tile_row + i, b_tile_col, N)]); // 不需要转置
     }
-    __syncthreads();
-
-    // first shared to frag
-#pragma unroll
-    for (int m = 0; m < TM; m += 4) {
-        FETCH_FLOAT4(a_frag[0][m]) = FETCH_FLOAT4(As[0][OFFSET(0, ty + m, BM)]); // 偏移到当前thread tile
-    }
-#pragma unroll
-    for (int n = 0; n < TN; n += 4) {
-        FETCH_FLOAT4(b_frag[0][n]) = FETCH_FLOAT4(Bs[0][OFFSET(0, tx + n, BN)]); // 偏移到当前thread tile
-    }
-
+    
 
     int write_index = 1;
     int load_index;
     int k = 0;
-    do {
+    do {  // 进入循环
+        __syncthreads();  // 循环开始时同步一次
+        // A += BK;
+        // B += BK * N;
         k += BK;
         // load global to reg
         if (k < K) {
@@ -96,10 +88,20 @@ __global__ void sgemm_v7(int M, int N, int K, float alpha, float *A, float *B, f
                         FETCH_FLOAT4(B[OFFSET(k + b_tile_row + i, b_tile_col, N)]);
             }
         }
-
         load_index = write_index ^ 1;
+        // first shared to frag
 #pragma unroll
-        for (int bk = 0; bk < BK - 1; bk++) {
+            for (int m = 0; m < TM; m += 4) {
+                FETCH_FLOAT4(a_frag[0][m]) = FETCH_FLOAT4(
+                        As[load_index][OFFSET(0, ty + m, BM)]); // 偏移到当前thread tile
+            }
+#pragma unroll
+            for (int n = 0; n < TN; n += 4) {
+                FETCH_FLOAT4(b_frag[0][n]) = FETCH_FLOAT4(
+                        Bs[load_index][OFFSET(0, tx + n, BN)]); // 偏移到当前thread tile
+            }
+#pragma unroll
+        for (int bk = 0; bk < BK - 1; bk++) {  // 计算了BK-1次
             for (int m = 0; m < TM; m += 4) {
                 FETCH_FLOAT4(a_frag[(bk + 1) % 2][m]) = FETCH_FLOAT4(
                         As[load_index][OFFSET(bk + 1, ty + m, BM)]); // 偏移到当前thread tile
@@ -116,7 +118,16 @@ __global__ void sgemm_v7(int M, int N, int K, float alpha, float *A, float *B, f
                 }
             }
         }
+#pragma unroll
+        for (int m = 0; m < TM; m++) {  // 前面只计算了BK-1次，这里计算第BK次
+#pragma unroll
+            for (int n = 0; n < TN; n++) {
+                accum[m][n] += a_frag[(BK - 1) % 2][m] * b_frag[(BK - 1) % 2][n];
+            }
+        }
+        // __syncthreads();  // 这里不需要同步了，因为下面的As[write_index]和上面的As[load_index]内存分开的
         if (k < K) {
+            // load reg to shared
 #pragma unroll
             for (int i = 0; i < BM; i += a_tile_stride) {
                 int ldg_index = i / a_tile_stride * 4;
@@ -131,29 +142,9 @@ __global__ void sgemm_v7(int M, int N, int K, float alpha, float *A, float *B, f
                 FETCH_FLOAT4(Bs[write_index][OFFSET(b_tile_row + i, b_tile_col, BN)]) =
                         FETCH_FLOAT4(ldg_b_reg[ldg_index]);
             }
-            __syncthreads();
-#pragma unroll
-            for (int m = 0; m < TM; m += 4) {
-                FETCH_FLOAT4(a_frag[0][m]) = FETCH_FLOAT4(
-                        As[write_index][OFFSET(0, ty + m, BM)]); // 偏移到当前thread tile
-            }
-#pragma unroll
-            for (int n = 0; n < TN; n += 4) {
-                FETCH_FLOAT4(b_frag[0][n]) = FETCH_FLOAT4(
-                        Bs[write_index][OFFSET(0, tx + n, BN)]); // 偏移到当前thread tile
-            }
 
             write_index ^= 1;
         }
-#pragma unroll
-        for (int m = 0; m < TM; m++) {
-#pragma unroll
-            for (int n = 0; n < TN; n++) {
-                accum[m][n] += a_frag[(BK - 1) % 2][m] * b_frag[(BK - 1) % 2][n];
-            }
-        }
-
-
     } while (k < K);
     
     // C = alpha*AB+C

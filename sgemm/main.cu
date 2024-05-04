@@ -10,8 +10,8 @@ int main(int argc, char **argv) {
     }
 
     int kernel_num = atoi(argv[1]);
-    if (kernel_num < 0 || kernel_num > 11) {
-        printf("Please enter a valid kernel number (0-11).\n");
+    if (kernel_num < 0 || kernel_num > 8) {
+        printf("Please enter a valid kernel number (0-7).\n");
         exit(EXIT_FAILURE);
     } else {
         printf("Select kernel %d.\n", kernel_num);
@@ -53,11 +53,13 @@ int main(int argc, char **argv) {
         cudaCheck(cudaMalloc((void **) &d_C_ref, mem_size_M));
         cudaCheck(cudaMemcpy(d_A, h_A, mem_size_M, cudaMemcpyHostToDevice));
         cudaCheck(cudaMemcpy(d_B, h_B, mem_size_M, cudaMemcpyHostToDevice));
+        cudaCheck(cudaMemcpy(d_C, h_C, mem_size_M, cudaMemcpyHostToDevice));
+        cudaCheck(cudaMemcpy(d_C_ref, h_C_ref, mem_size_M, cudaMemcpyHostToDevice));
 
         // 6. call custom kernel and cublas, and verify correctness
         if (kernel_num != 0) {
             call_kernel(kernel_num, false, m, n, k, alpha, d_A, d_B, beta, d_C);
-            call_kernel(0, false, m, n, k, alpha, d_A, d_B, beta, d_C);
+            call_kernel(0, false, m, n, k, alpha, d_A, d_B, beta, d_C_ref);
             cudaCheck(cudaDeviceSynchronize());
             cudaCheck(cudaMemcpy(h_C, d_C, mem_size_M, cudaMemcpyDeviceToHost));
             cudaCheck(cudaMemcpy(h_C_ref, d_C_ref, mem_size_M, cudaMemcpyDeviceToHost));

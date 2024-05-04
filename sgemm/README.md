@@ -190,13 +190,29 @@ for (int i = 0; i < BK; i++) {
 <img src="./images/kernel_6_vs_7.png" width = "500"/><img src="./images/kernel_cublas_vs_7.png" width = "500"/>
 </div>
 
+### 分析
+不要在循环中过度使用`__syncthreads()`：过度使用`__syncthreads()`可能会降低性能，因为它会阻止线程并行地执行。参考[这篇文章](https://blog.csdn.net/weixin_43844521/article/details/133945535)。
+
+
+# Q&A
+## 为什么pre-fetch的时候，global memory 要先放到寄存器中再挪到 shared memory 中
+答：因为硬件的限制，在安培架构之前，global memory 和shared memory没有直连，所以搬运逻辑就是先搬寄存器，再搬共享内存。
+
+代码中哪怕直接写了global memory赋值给shared memory，中间也包含了“先写寄存器再写到shared memory”的，只是编译器隐藏了这一点。
+
+## Kernel7的代码看上去还是顺序执行的，似乎没有做到“数据读取和计算”的重叠
+建议阅读：[CUDA 学习笔记-GEMM 优化: 双缓冲 (Prefetch) 和 Bank Conflict 解决](https://blog.csdn.net/LostUnravel/article/details/138324342)
+
+> 直观看来, 代码整体上仍然是顺序执行的逻辑, 感觉好像并不能达到 overlap 的目的, 因为还是读一个分片写一个分片的代码逻辑.
+实则不然. 核心在于要理解代码对应的指令发射与执行完成的过程. 在 GPU 上, 访存和计算对应着不同的硬件单元, 这两个计算单元是可以并行执行的, **代码的顺序执行**对应的是**编译后硬件指令发射的顺序过程**, 指令的发射过程虽然是顺序的, 但发射速度很快, 而指令发出后需要一段时间才能执行完成, 这也就对应着某个指令需要相应的时钟周期才能完成, 访存的延迟也就是访存指令相比于计算指令有更长的时钟周期.
+
 # 参考
 1. https://github.com/wangzyon/NVIDIA_SGEMM_PRACTICE
-2. https://zhuanlan.zhihu.com/p/410278370
-3. https://zhuanlan.zhihu.com/p/435908830
-4. https://blog.csdn.net/u013013023/article/details/127245181
-5. bank conflict: https://blog.csdn.net/xysjj/article/details/103885803
-6. bank conflict: https://segmentfault.com/a/1190000007533157
-7. https://github.com/yzhaiustc/Optimizing-SGEMM-on-NVIDIA-Turing-GPUs
+2. https://github.com/yzhaiustc/Optimizing-SGEMM-on-NVIDIA-Turing-GPUs
+3. https://zhuanlan.zhihu.com/p/410278370
+4. https://zhuanlan.zhihu.com/p/435908830
+5. https://blog.csdn.net/u013013023/article/details/127245181
+6. bank conflict: https://blog.csdn.net/xysjj/article/details/103885803
+7. bank conflict: https://segmentfault.com/a/1190000007533157
 8. vectorized loads: https://developer.nvidia.com/blog/cuda-pro-tip-increase-performance-with-vectorized-memory-access/
 9. vectorized loads: https://www.zhihu.com/question/574968879/answer/3005751704

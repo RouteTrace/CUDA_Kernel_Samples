@@ -50,14 +50,14 @@ void CudaDeviceInfo() {
 };
 
 void randomize_matrix(float *mat, size_t N) {
-    // NOTICE: 使用gettimeofdays替代srand((unsigned)time(NULL));time精度过低，产生相同随机数
-    struct timeval time;
-    gettimeofday(&time, NULL);
-    srand(time.tv_usec);
+    std::random_device rd;  
+    std::mt19937 gen(rd()); // 使用随机设备初始化生成器  
+
+    // 创建一个在[0, 2000)之间均匀分布的分布对象  
+    std::uniform_int_distribution<> dis(0, 2000); 
     for (int i = 0; i < N; i++) {
-        float tmp = (float) (rand() % 5) + 0.01 * (rand() % 5);
-        tmp = (rand() % 2 == 0) ? tmp : tmp * (-1.);
-        mat[i] = tmp;
+        // 生成随机数，限制范围在[-1.0,1.0]
+        mat[i] = (dis(gen)-1000)/1000.0;  
     }
 }
 
@@ -69,10 +69,9 @@ void copy_matrix(float *src, float *dest, size_t N) {
         printf("copy failed at %d while there are %lu elements in total.\n", i, N);
 }
 
-void print_matrix(const float *A, int M, int N) {
-    int i;
+void print_matrix(const float *A, size_t M, size_t N) {
     printf("[");
-    for (i = 0; i < M * N; i++) {
+    for (size_t i = 0; i < M * N; i++) {
         if ((i + 1) % N == 0)
             printf("%5.2f ", A[i]);
         else
@@ -91,7 +90,7 @@ bool verify_matrix(float *mat1, float *mat2, size_t N) {
     for (i = 0; mat1 + i && mat2 + i && i < N; i++) {
         diff = fabs((double) mat1[i] - (double) mat2[i]);
         if (diff > 1e-2) {
-            printf("error. %5.2f,%5.2f,%d\n", mat1[i], mat2[i], i);
+            printf("Error: mat1[%d]=%5.2f, mat2[%d]=%5.2f, \n", i, mat1[i], i, mat2[i]);
             return false;
         }
     }
