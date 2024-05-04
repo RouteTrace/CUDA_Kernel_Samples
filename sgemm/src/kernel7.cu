@@ -35,8 +35,8 @@ __global__ void sgemm_v7(int M, int N, int K, float alpha, float *A, float *B, f
     float accum[TM][TN] = {0.}; // 每个线程负责TM*TN个元素，则需要申请TM*TN个寄存器保存累加值，额外的一个寄存器用于缓存；
 
     // 计算ldg_a_num的所有参数必须全部是const，否则不能用来申明数组大小
-    float ldg_a_reg[4 * ldg_a_num] = {0.}; // 每个线程搬运ldg_a_num轮，寄存器缓存ldg_a_num个float4元素，用于转置As矩阵
-    float ldg_b_reg[4 * ldg_b_num] = {0.}; // 每个线程搬运ldg_a_num轮，寄存器缓存ldg_a_num个float4元素，用于转置As矩阵
+    float ldg_a_reg[4 * ldg_a_num] = {0.}; // 每个线程搬运ldg_a_num轮，寄存器缓存ldg_a_num个float4元素，并用于转置As矩阵
+    float ldg_b_reg[4 * ldg_b_num] = {0.}; // 每个线程搬运ldg_b_num轮，寄存器缓存ldg_b_num个float4元素
 
     float a_frag[2][TM];  // 缓存As共享内存,增加一倍寄存器大小用于缓存
     float b_frag[2][TN];  // 缓存Bs共享内存,增加一倍寄存器大小用于缓存
@@ -64,7 +64,6 @@ __global__ void sgemm_v7(int M, int N, int K, float alpha, float *A, float *B, f
                 FETCH_FLOAT4(B[OFFSET(b_tile_row + i, b_tile_col, N)]); // 不需要转置
     }
     
-
     int write_index = 1;
     int load_index;
     int k = 0;
@@ -72,6 +71,7 @@ __global__ void sgemm_v7(int M, int N, int K, float alpha, float *A, float *B, f
         __syncthreads();  // 循环开始时同步一次
         // A += BK;
         // B += BK * N;
+        // 窗口滑动的逻辑直接用k写到A和B的索引中了，不用再滑动了
         k += BK;
         // load global to reg
         if (k < K) {
@@ -89,7 +89,8 @@ __global__ void sgemm_v7(int M, int N, int K, float alpha, float *A, float *B, f
             }
         }
         load_index = write_index ^ 1;
-        // first shared to frag
+        // first shared to frag，这里，第109和第114行的accum[m][n]计算需要等待第一个shared to frag完成才可以继续
+        // 也就是说，这里第一次加载shared memory到寄存器的操作，无法隐藏“从shared memory加载到寄存器的访存延迟”。
 #pragma unroll
             for (int m = 0; m < TM; m += 4) {
                 FETCH_FLOAT4(a_frag[0][m]) = FETCH_FLOAT4(
@@ -100,8 +101,9 @@ __global__ void sgemm_v7(int M, int N, int K, float alpha, float *A, float *B, f
                 FETCH_FLOAT4(b_frag[0][n]) = FETCH_FLOAT4(
                         Bs[load_index][OFFSET(0, tx + n, BN)]); // 偏移到当前thread tile
             }
+        // finished first shared to frag
 #pragma unroll
-        for (int bk = 0; bk < BK - 1; bk++) {  // 计算了BK-1次
+        for (int bk = 0; bk < BK - 1; bk++) {  // 计算了BK-1次，因为是加载下一次迭代的数据，所以可以隐藏“从shared memory加载到寄存器的访存延迟”。
             for (int m = 0; m < TM; m += 4) {
                 FETCH_FLOAT4(a_frag[(bk + 1) % 2][m]) = FETCH_FLOAT4(
                         As[load_index][OFFSET(bk + 1, ty + m, BM)]); // 偏移到当前thread tile
@@ -125,7 +127,7 @@ __global__ void sgemm_v7(int M, int N, int K, float alpha, float *A, float *B, f
                 accum[m][n] += a_frag[(BK - 1) % 2][m] * b_frag[(BK - 1) % 2][n];
             }
         }
-        // __syncthreads();  // 这里不需要同步了，因为下面的As[write_index]和上面的As[load_index]内存分开的
+        // __syncthreads();  // 这里不需要同步了，因为上面的As(Bs)[load_index]和下面的As(Bs)[write_index]的内存是分开的
         if (k < K) {
             // load reg to shared
 #pragma unroll

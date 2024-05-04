@@ -185,14 +185,70 @@ for (int i = 0; i < BK; i++) {
 
 更多细节可以阅读[官方blog](https://developer.nvidia.com/blog/cuda-pro-tip-increase-performance-with-vectorized-memory-access/)。
 
-## Kernel7：数据预取
+## Kernel7：数据预取 (双缓存)
 <div align=center>
 <img src="./images/kernel_6_vs_7.png" width = "500"/><img src="./images/kernel_cublas_vs_7.png" width = "500"/>
 </div>
 
+### 计算步骤
+总体流程图：
+<div align=center>
+<img src="./images/double-buffer.png" width = "800"/>
+</div>
+
+以下是具体流程。
+
+1、初始化数据：
+
+<div align=center>
+<img src="./images/image7-1.png" width = "800"/>
+</div>
+
+2、第一次 global memory 到 shared memory 的拷贝: 
+
+<div align=center>
+<img src="./images/image7-2.png" width = "800"/>
+</div>
+
+3、**进入循环**，global memory to shared memory：
+
+<div align=center>
+<img src="./images/image7-3.png" width = "800"/>
+</div>
+
+4、计算，并拷贝下一轮数据到寄存器：
+
+<div align=center>
+<img src="./images/image7-4.png" width = "800"/>
+</div>
+
+5、从寄存器拷贝下一轮数据到另一块shared memory：
+
+<div align=center>
+<img src="./images/image7-5.png" width = "800"/>
+</div>
+
+6、结束本轮迭代，开启下一轮迭代(回第3步)。
+
 ### 分析
 不要在循环中过度使用`__syncthreads()`：过度使用`__syncthreads()`可能会降低性能，因为它会阻止线程并行地执行。参考[这篇文章](https://blog.csdn.net/weixin_43844521/article/details/133945535)。
 
+> 以下内容摘录并修改自：https://blog.csdn.net/LostUnravel/article/details/138324342
+
+在 GPU 上, **访存和计算对应着不同的硬件单元**, **这两个计算单元是可以并行执行的**。
+
+**代码的顺序执行**对应的是编译后**硬件指令发射的顺序**, 指令的发射过程虽然是顺序的, 但发射速度很快, 而指令发出后需要一段时间才能执行完成, 这也就对应着某个指令需要相应的时钟周期才能完成, 访存的延迟也就是访存指令相比于计算指令有更长的时钟周期。
+
+在 kernel 6 中, 需要两个 `__syncthreads()`, 一个是在从 global memory 加载数据到 shared memory 后, 一个是在从shared memory取数据放到register，并完成计算后。因此，kernel6中，在当前线程块的所有线程加载完数据到 shared memory 之前, 当前线程块的所有线程都无法开始计算; 同样的, 在所有线程计算完毕前, 也不能加载下一轮的数据到 shared memory。
+
+而kernel7的双缓存实现中, 具有以下优势：
+1. **线程块层面**：shared memory扩大了一倍，一半用加载下一轮的数据，一半用于当前计算，在循环开始前，先加载第一轮的数据，然后在循环中，使用当前已加载的数据进行计算，并加载下一轮数据，这样当前这一轮计算时就不必等待数据加载，因为这一轮所需的数据在上一轮已经加载完成，因此可以节约掉 1 个 `__syncthreads()`，这样在**线程块层面**, GPU 可以提前发射后面的计算的指令, 从而掩盖从 global memory 加载到 shared memory 的访存延迟。
+2. **线程层面**：寄存器也扩大了一倍，采用和shared memory同样的处理思路，一半用于加载下一轮的数据，一半用于当前计算，这样在**线程层面**，GPU 可以提前发射GPU 可以提前发射后面的计算的指令，从而掩盖从 shared memory 加载到寄存器的访存延迟。
+
+还有两点需要注意：
+1. 第一次准备数据和第一次计算之间的延迟不能隐藏，因为第一次计算依赖于第一次数据的加载。而后续每次计算都会同时加载下一轮数据，所以可以隐藏访问延迟。
+2. 只是节约了一个线程块内部，加载数据到计算前的那个`__syncthreads()`，但是只有当前线程块的所有线程都计算完毕后，才能移动窗口（即kernel2中引入的tile，只有当前线程块的线程都完成计算了，才能移动到下一个tile），这里的`__syncthreads()`是不能省略的。
+3. 线程层面的访问延迟不是通过`__syncthreads()`实现的，只是通过避开计算和数据存取的依赖关系，让编译器提前发射计算指令。
 
 # Q&A
 ## 为什么pre-fetch的时候，global memory 要先放到寄存器中再挪到 shared memory 中
