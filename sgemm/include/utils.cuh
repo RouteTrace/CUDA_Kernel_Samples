@@ -32,7 +32,7 @@
             cudaCheck(cudaEventDestroy(start));                                                 \
             cudaCheck(cudaEventDestroy(stop));                                                  \
         }                                                                                       \
-        if (N == 0) return (float)0.0;                                                                 \
+        if (N == 0) return (float)0.0;                                                          \
         return total_time;                                                                      \
     }()
 
