@@ -22,7 +22,7 @@
             cudaCheck(cudaEventCreate(&start));                                                 \
             cudaCheck(cudaEventCreate(&stop));                                                  \
             cudaCheck(cudaEventRecord(start));                                                  \
-            cudaEventQuery(start);	                                                            \
+            cudaEventQuery(start);                                                              \
             func();                                                                             \
             cudaCheck(cudaEventRecord(stop));                                                   \
             cudaCheck(cudaEventSynchronize(stop));                                              \
