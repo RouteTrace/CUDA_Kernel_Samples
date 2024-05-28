@@ -3,4 +3,7 @@ project(TRANSPOSE LANGUAGES CXX CUDA)
 
 find_package(CUDA REQUIRED)
 include_directories(${CUDA_INCLUDE_DIRS})
-add_executable(transpose transpose.cu)
+include_directories(${PROJECT_SOURCE_DIR}/include)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src SRC)
+
+add_executable(transpose transpose.cu ${SRC})
