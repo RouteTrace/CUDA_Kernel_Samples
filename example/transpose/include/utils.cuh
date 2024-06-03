@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <random>
 
-#define Ceil(a, b) ((a) + (b) - 1) / (b)
+#define CEIL(a, b) ((a) + (b) - 1) / (b)
 #define cudaCheck(err) _cudaCheck(err, __FILE__, __LINE__)
 #define TIME_RECORD(N, func)                                                                    \
     [&] {                                                                                       \
