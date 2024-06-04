@@ -22,7 +22,6 @@ shared_memory 优化：
 [device_transpose_v3] Average time: (10.317618) ms
 ```
 
-
 ## 参考 
 1. cuda编程基础与实践 (樊哲勇)
 2. [CUDA笔记-内存合并访问](https://zhuanlan.zhihu.com/p/641639133)
