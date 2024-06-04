@@ -13,7 +13,7 @@
 #define REPEAT_TIMES 10
 #define CEIL_DIV(M, N) ((M) + (N)-1) / (N)
 #define cudaCheck(err) _cudaCheck(err, __FILE__, __LINE__)
-// call `func` for `N` times and return total time
+// call `func` for `N` times and return total time(ms)
 #define TIME_RECORD(N, func)                                                                    \
     [&] {                                                                                       \
         float total_time = 0;                                                                   \

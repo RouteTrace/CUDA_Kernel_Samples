@@ -89,7 +89,7 @@ int main() {
     float total_time0 = TIME_RECORD(repeat_times, ([&]{device_transpose_v0<<<grid_size0, block_size0>>>(d_matrix, d_matrix_tr, M, N);}));
     cudaMemcpy(h_matrix_tr, d_matrix_tr, sizeof(float) * M * N, cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
-    printf("[device_transpose_v0] Average time: (%f) seconds\n", total_time0 / repeat_times);
+    printf("[device_transpose_v0] Average time: (%f) ms\n", total_time0 / repeat_times);
     // print_matrix(h_matrix_tr, N, M);
     
     // 2.2 call transpose_v1
@@ -98,7 +98,7 @@ int main() {
     float total_time1 = TIME_RECORD(repeat_times, ([&]{device_transpose_v1<<<grid_size1, block_size1>>>(d_matrix, d_matrix_tr, M, N);}));
     cudaMemcpy(h_matrix_tr, d_matrix_tr, sizeof(float) * M * N, cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
-    printf("[device_transpose_v1] Average time: (%f) seconds\n", total_time1 / repeat_times);
+    printf("[device_transpose_v1] Average time: (%f) ms\n", total_time1 / repeat_times);
     // print_matrix(h_matrix_tr, N, M);
 
     // 2.3 call transpose_v2
@@ -107,7 +107,7 @@ int main() {
     float total_time2 = TIME_RECORD(repeat_times, ([&]{device_transpose_v2<<<grid_size2, block_size2>>>(d_matrix, d_matrix_tr, M, N);}));
     cudaMemcpy(h_matrix_tr, d_matrix_tr, sizeof(float) * M * N, cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
-    printf("[device_transpose_v2] Average time: (%f) seconds\n", total_time2 / repeat_times);
+    printf("[device_transpose_v2] Average time: (%f) ms\n", total_time2 / repeat_times);
     // print_matrix(h_matrix_tr, N, M);
 
     // 2.4 call transpose_v3
@@ -116,7 +116,7 @@ int main() {
     float total_time3 = TIME_RECORD(repeat_times, ([&]{device_transpose_v3<BLOCK_SIZE><<<grid_size3, block_size3>>>(d_matrix, d_matrix_tr, M, N);}));
     cudaMemcpy(h_matrix_tr, d_matrix_tr, sizeof(float) * M * N, cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
-    printf("[device_transpose_v3] Average time: (%f) seconds\n", total_time3 / repeat_times);
+    printf("[device_transpose_v3] Average time: (%f) ms\n", total_time3 / repeat_times);
     // print_matrix(h_matrix_tr, N, M);
 
     // free memory

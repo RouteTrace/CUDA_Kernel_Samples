@@ -16,10 +16,10 @@ shared_memory 优化：
 ## 不同kernel的运行效率
 在 M = N = 12800, BLOCK_SIZE =32 的情况下测试：
 ```
-[device_transpose_v0] Average time: (55.187450) seconds
-[device_transpose_v1] Average time: (39.390110) seconds
-[device_transpose_v2] Average time: (18.930277) seconds
-[device_transpose_v3] Average time: (10.296934) seconds
+[device_transpose_v0] Average time: (54.588512) ms
+[device_transpose_v1] Average time: (39.414070) ms
+[device_transpose_v2] Average time: (18.924541) ms
+[device_transpose_v3] Average time: (10.317618) ms
 ```
 
 
