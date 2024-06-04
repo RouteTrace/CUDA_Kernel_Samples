@@ -14,7 +14,7 @@ shared_memory 优化：
 1. device_transpose_v3：利用共享内存中转，读操作和写操作都是合并的
 
 ## 不同kernel的运行效率
-在 M = N = 12800, BLOCK_SIZE =32 的情况下测试：
+在 M = N = 12800, BLOCK_SIZE = 32 的情况下测试：
 ```
 [device_transpose_v0] Average time: (54.588512) ms
 [device_transpose_v1] Average time: (39.414070) ms
