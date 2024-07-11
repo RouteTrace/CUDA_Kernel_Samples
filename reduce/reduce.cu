@@ -144,6 +144,45 @@ void call_reduce_v3(float* d_x, float* d_y, float* h_y, const int N) {
     cudaDeviceSynchronize();
 }
 
+// reduce_v4：使用 warp shuffle
+__global__ void device_reduce_v4(float* d_x, float* d_y, const int N) {
+    __shared__ float s_y[32];  // 仅需要32个，因为一个block最多1024个线程，最多1024/32=32个warp
+
+    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+    int warpId = threadIdx.x / warpSize;  // 当前线程属于哪个warp
+    int laneId = threadIdx.x % warpSize;  // 当前线程是warp中的第几个线程
+
+    float val = (idx < N) ? d_x[idx] : 0.0f;  // 搬运d_x[idx]到当前线程的寄存器中
+    #pragma unroll
+    for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
+        val += __shfl_down_sync(0xFFFFFFFF, val, offset);   // 在一个warp里折半归约
+    }
+
+    if (laneId == 0) s_y[warpId] = val;  // 每个warp里的第一个线程，负责将数据存储到shared mem中
+    __syncthreads();
+
+    if (warpId == 0) {  // 使用每个block中的第一个warp对s_y进行最后的归约
+        int warpNum = blockDim.x / warpSize;  // 每个block中的warp数量
+        val = (laneId < warpNum) ? s_y[laneId] : 0.0f;
+        for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
+            val += __shfl_down_sync(0xFFFFFFFF, val, offset);
+        }
+        if (laneId == 0) atomicAdd(d_y, val);  // 使用此warp中的第一个线程，将结果累加到输出
+    }
+}
+
+template <const int BLOCK_SIZE>
+void call_reduce_v4(float* d_x, float* d_y, float* h_y, const int N) {
+    const int GRID_SIZE = CEIL(N, BLOCK_SIZE);
+    dim3 block_size(BLOCK_SIZE);
+    dim3 grid_size(GRID_SIZE);
+    *h_y = 0.0;  // host端d_y清零
+    cudaMemcpy(d_y, h_y, sizeof(float), cudaMemcpyHostToDevice);  // 拷贝给d_y
+    device_reduce_v4<<<grid_size, block_size>>>(d_x, d_y, N);  // 使用（动态）共享内存
+    cudaMemcpy(h_y, d_y, sizeof(float), cudaMemcpyDeviceToHost);  // 拷贝回h_y
+    cudaDeviceSynchronize();
+}
+
 int main() {
     size_t N = 100000000;
     constexpr size_t BLOCK_SIZE = 128;
@@ -180,12 +219,17 @@ int main() {
     float total_time_2 = TIME_RECORD(repeat_times, ([&]{call_reduce_v2<BLOCK_SIZE>(d_nums, d_rd_nums, h_rd_nums, N, sum);}));
     printf("[reduce_v2]: sum = %f, total_time_2 = %f ms\n", *sum, total_time_2 / repeat_times);
 
-    // 2.4 call reduce_v2，在v2基础上引入原子函数，不需要再到CPU进行归约了
+    // 2.4 call reduce_v3，在v2基础上引入原子函数，不需要再到CPU进行归约了
     float *d_sum;
     cudaMalloc((void **) &d_sum, sizeof(float));
     cudaMemcpy(d_nums, h_nums, sizeof(float) * N, cudaMemcpyHostToDevice);
     float total_time_3 = TIME_RECORD(repeat_times, ([&]{call_reduce_v3<BLOCK_SIZE>(d_nums, d_sum, sum, N);}));
     printf("[reduce_v3]: sum = %f, total_time_3 = %f ms\n", *sum, total_time_3 / repeat_times);    
+
+    // 2.5 call reduce_v4，使用warp shuffle
+    cudaMemcpy(d_nums, h_nums, sizeof(float) * N, cudaMemcpyHostToDevice);
+    float total_time_4 = TIME_RECORD(repeat_times, ([&]{call_reduce_v4<BLOCK_SIZE>(d_nums, d_sum, sum, N);}));
+    printf("[reduce_v4]: sum = %f, total_time_4 = %f ms\n", *sum, total_time_4 / repeat_times);    
 
     // free memory
     free(h_nums);
