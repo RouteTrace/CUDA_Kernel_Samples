@@ -12,7 +12,7 @@ device_reduce_v4：使用 warp shuffle 进行计算，在一个warp里进行归�
 
 因为一个 warp 里的线程是**天然同步的（硬件级同步）**，所以不需要手动调用 `__syncthreads()`，并行性更好，效率更高。
 
-## 结果
+## 测试
 N=100000000，BLOCK_SIZE = 128 的测试结果：
 ```
 [reduce_host]: sum = 7546.400879, total_time_h = 378.095032 ms
