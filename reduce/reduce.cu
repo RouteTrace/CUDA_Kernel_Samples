@@ -186,7 +186,7 @@ void call_reduce_v4(float* d_x, float* d_y, float* h_y, const int N) {
 
 __global__ void device_reduce_v5(float* d_x, float* d_y, const int N) {
 	__shared__ float s_y[32];
-	int idx = (blockDim.x * blockIdx.x + threadIdx.x) * 4;
+	int idx = (blockDim.x * blockIdx.x + threadIdx.x) * 4;  // 这里要乘以4
 	int warpId = threadIdx.x / warpSize;   // 当前线程位于第几个warp
 	int laneId = threadIdx.x % warpSize;   // 当前线程是warp中的第几个线程
 	float val = 0.0f;
@@ -217,7 +217,7 @@ __global__ void device_reduce_v5(float* d_x, float* d_y, const int N) {
 
 template <const int BLOCK_SIZE>
 void call_reduce_v5(float* d_x, float* d_y, float* h_y, const int N) {
-    const int GRID_SIZE = CEIL(CEIL(N, BLOCK_SIZE), 4);
+    const int GRID_SIZE = CEIL(CEIL(N, BLOCK_SIZE), 4);  // 这里要除以4
     dim3 block_size(BLOCK_SIZE);
     dim3 grid_size(GRID_SIZE);
     *h_y = 0.0;  // host端d_y清零
