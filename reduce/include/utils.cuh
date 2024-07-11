@@ -4,6 +4,7 @@
 #include <random>
 
 #define CEIL(a, b) ((a) + (b) - 1) / (b)
+#define FLOAT4(value) (*(float4*)(&(value)))
 #define cudaCheck(err) _cudaCheck(err, __FILE__, __LINE__)
 #define TIME_RECORD(N, func)                                                                    \
     [&] {                                                                                       \

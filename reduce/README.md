@@ -12,15 +12,18 @@ device_reduce_v4：使用 warp shuffle 进行计算，在一个warp里进行归�
 
 因为一个 warp 里的线程是**天然同步的（硬件级同步）**，所以不需要手动调用 `__syncthreads()`，并行性更好，效率更高。
 
+device_reduce_v5：在 v4 基础上使用 float4 向量化读取。
+
 ## 测试
 N=100000000，BLOCK_SIZE = 128 的测试结果：
 ```
-[reduce_host]: sum = 7546.400879, total_time_h = 378.095032 ms
-[reduce_v0]: sum = 17320528.000000, total_time_0 = 30.336390 ms
-[reduce_v1]: sum = 7544.931152, total_time_1 = 19.503923 ms
-[reduce_v2]: sum = 7544.931152, total_time_2 = 19.559578 ms
-[reduce_v3]: sum = 7544.933105, total_time_3 = 15.941119 ms
-[reduce_v4]: sum = 7544.932617, total_time_4 = 11.237376 ms
+[reduce_host]: sum = -1392.220947, total_time_h = 383.848877 ms
+[reduce_v0]: sum = 12188807.000000, total_time_0 = 31.068247 ms
+[reduce_v1]: sum = -1392.776123, total_time_1 = 19.648817 ms
+[reduce_v2]: sum = -1392.776123, total_time_2 = 19.483204 ms
+[reduce_v3]: sum = -1392.776123, total_time_3 = 15.859097 ms
+[reduce_v4]: sum = -1392.792847, total_time_4 = 11.208912 ms
+[reduce_v5]: sum = -1392.694214, total_time_5 = 4.105523 ms
 ```
 
 ## 参考：

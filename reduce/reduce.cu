@@ -183,6 +183,50 @@ void call_reduce_v4(float* d_x, float* d_y, float* h_y, const int N) {
     cudaDeviceSynchronize();
 }
 
+
+__global__ void device_reduce_v5(float* d_x, float* d_y, const int N) {
+	__shared__ float s_y[32];
+	int idx = (blockDim.x * blockIdx.x + threadIdx.x) * 4;
+	int warpId = threadIdx.x / warpSize;   // 当前线程位于第几个warp
+	int laneId = threadIdx.x % warpSize;   // 当前线程是warp中的第几个线程
+	float val = 0.0f;
+	if (idx < N) {
+		float4 tmp_x = FLOAT4(d_x[idx]);
+		val += tmp_x.x;
+		val += tmp_x.y;
+		val += tmp_x.z;
+		val += tmp_x.w;
+	}
+	#pragma unroll
+	for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
+		val += __shfl_down_sync(0xFFFFFFFF, val, offset);
+	}
+
+	if (laneId == 0) s_y[warpId] = val;
+	__syncthreads();
+
+	if (warpId == 0) {
+		int warpNum = blockDim.x / warpSize;
+		val = (laneId < warpNum) ? s_y[laneId] : 0.0f;
+		for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
+			val += __shfl_down_sync(0xFFFFFFFF, val, offset);
+		}
+		if (laneId == 0) atomicAdd(d_y, val);
+	}
+}
+
+template <const int BLOCK_SIZE>
+void call_reduce_v5(float* d_x, float* d_y, float* h_y, const int N) {
+    const int GRID_SIZE = CEIL(CEIL(N, BLOCK_SIZE), 4);
+    dim3 block_size(BLOCK_SIZE);
+    dim3 grid_size(GRID_SIZE);
+    *h_y = 0.0;  // host端d_y清零
+    cudaMemcpy(d_y, h_y, sizeof(float), cudaMemcpyHostToDevice);  // 拷贝给d_y
+    device_reduce_v5<<<grid_size, block_size>>>(d_x, d_y, N);  // 使用（动态）共享内存
+    cudaMemcpy(h_y, d_y, sizeof(float), cudaMemcpyDeviceToHost);  // 拷贝回h_y
+    cudaDeviceSynchronize();
+}
+
 int main() {
     size_t N = 100000000;
     constexpr size_t BLOCK_SIZE = 128;
@@ -230,6 +274,11 @@ int main() {
     cudaMemcpy(d_nums, h_nums, sizeof(float) * N, cudaMemcpyHostToDevice);
     float total_time_4 = TIME_RECORD(repeat_times, ([&]{call_reduce_v4<BLOCK_SIZE>(d_nums, d_sum, sum, N);}));
     printf("[reduce_v4]: sum = %f, total_time_4 = %f ms\n", *sum, total_time_4 / repeat_times);    
+
+    // 2.6 call reduce_v5，使用warp shuffle + float4
+    cudaMemcpy(d_nums, h_nums, sizeof(float) * N, cudaMemcpyHostToDevice);
+    float total_time_5 = TIME_RECORD(repeat_times, ([&]{call_reduce_v5<BLOCK_SIZE>(d_nums, d_sum, sum, N);}));
+    printf("[reduce_v5]: sum = %f, total_time_5 = %f ms\n", *sum, total_time_5 / repeat_times);    
 
     // free memory
     free(h_nums);
