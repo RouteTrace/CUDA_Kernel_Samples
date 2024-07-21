@@ -57,7 +57,11 @@ __global__ void device_transpose_v3(const float* input, float* output, int M, in
     const int x2 = by + threadIdx.x;
     const int y2 = bx + threadIdx.y;
     if (y2 < N && x2 < M) {
-        output[y2 * M + x2] = S[threadIdx.x][threadIdx.y];  // 合并写入
+        // 合并写入，但是存在bank冲突：
+        // 可以看出，同一个warp中的32个线程（连续的32个threaIdx.x值）
+        // 将对应共享内存中跨度为32的数据，也就说，这32个线程恰好访问
+        // 同一个bank中的32个数据，这将导致32路bank冲突
+        output[y2 * M + x2] = S[threadIdx.x][threadIdx.y];
     }
 }
 
@@ -78,6 +82,11 @@ __global__ void device_transpose_v4(const float* input, float* output, int M, in
     const int x2 = by + threadIdx.x;
     const int y2 = bx + threadIdx.y;
     if (y2 < N && x2 < M) {
+        // 通过做padding后，同一个warp中的32个线程（连续的32个threaIdx.x值）
+        // 将对应共享内存中跨度为33的数据
+        // 如果第一个线程访问第一个bank中的第一层
+        // 那么第二个线程访问第二个bank中的第二层
+        // 以此类推，32个线程访问32个不同bank，不存在bank冲突
         output[y2 * M + x2] = S[threadIdx.x][threadIdx.y];  // 合并写入
     }
 }
