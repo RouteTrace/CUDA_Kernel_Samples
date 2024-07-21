@@ -11,15 +11,17 @@
 
 ## 如何利用**共享内存**优化矩阵转置？
 shared_memory 优化：
-1. device_transpose_v3：利用共享内存中转，读操作和写操作都是合并的
+1. device_transpose_v3：利用共享内存中转，读操作和写操作都是合并的，但是存在bank conflict
+2. device_transpose_v4：对共享内存做padding，解决bank conflict
 
 ## 不同kernel的运行效率
 在 M = N = 12800, BLOCK_SIZE = 32 的情况下测试：
 ```
-[device_transpose_v0] Average time: (54.588512) ms
-[device_transpose_v1] Average time: (39.414070) ms
-[device_transpose_v2] Average time: (18.924541) ms
-[device_transpose_v3] Average time: (10.317618) ms
+[device_transpose_v0] Average time: (52.536610) ms
+[device_transpose_v1] Average time: (42.727524) ms
+[device_transpose_v2] Average time: (18.927723) ms
+[device_transpose_v3] Average time: (32.587059) ms
+[device_transpose_v4] Average time: (13.613620) ms
 ```
 
 ## 参考 

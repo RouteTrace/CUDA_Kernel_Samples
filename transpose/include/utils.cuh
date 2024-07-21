@@ -30,3 +30,4 @@
 void _cudaCheck(cudaError_t error, const char *file, int line);
 void randomize_matrix(float *mat, int N);
 void print_matrix(float* a, int M, int N);
+bool verify_matrix(float *mat1, float *mat2, size_t N);

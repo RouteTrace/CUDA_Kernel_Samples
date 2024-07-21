@@ -29,3 +29,16 @@ void print_matrix(float* a, int M, int N) {
     }
     printf("\n");
 }
+
+bool verify_matrix(float *mat1, float *mat2, size_t N) {
+    double diff = 0.0;
+    int i;
+    for (i = 0; mat1 + i && mat2 + i && i < N; i++) {
+        diff = fabs((double) mat1[i] - (double) mat2[i]);
+        if (diff > 1e-4) {
+            printf("Error: mat1[%d]=%5.6f, mat2[%d]=%5.6f, \n", i, mat1[i], i, mat2[i]);
+            return false;
+        }
+    }
+    return true;
+}
