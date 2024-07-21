@@ -14,6 +14,7 @@
 <div align=center>
 <img src="./assets/sharedMem.png" width = "800"/>
 </div>
+
 shared_memory 优化：
 1. device_transpose_v3：利用共享内存中转，读操作和写操作都是合并的，但是**存在bank conflict**
 2. device_transpose_v4：对**共享内存做padding**，解决bank conflict
