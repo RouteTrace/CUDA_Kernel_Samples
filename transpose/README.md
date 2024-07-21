@@ -10,9 +10,13 @@
 3. device_transpose_v2：读操作是不合并的，写操作是合并的，并显式地使用 `__ldg`，速度提升了（不清楚原因，按理说2、3性能应该保持一致）
 
 ## 如何利用**共享内存**优化矩阵转置？
+
+<div align=center>
+<img src="./assets/sharedMem.png" width = "800"/>
+</div>
 shared_memory 优化：
-1. device_transpose_v3：利用共享内存中转，读操作和写操作都是合并的，但是存在bank conflict
-2. device_transpose_v4：对共享内存做padding，解决bank conflict
+1. device_transpose_v3：利用共享内存中转，读操作和写操作都是合并的，但是**存在bank conflict**
+2. device_transpose_v4：对**共享内存做padding**，解决bank conflict
 
 ## 不同kernel的运行效率
 在 M = N = 12800, BLOCK_SIZE = 32 的情况下测试：
