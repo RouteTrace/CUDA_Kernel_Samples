@@ -36,9 +36,8 @@ __global__ void sgemv_k32(float* A, float* x, float* y, int M, int K) {
 }
 
 int main() {
-    
     size_t M = 1024;
-    size_t K = 128;
+    size_t K = 32;
 
     size_t bytes_A = sizeof(float) * M * K;
     size_t bytes_x = sizeof(float) * K;
