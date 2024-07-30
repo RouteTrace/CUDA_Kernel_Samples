@@ -157,11 +157,8 @@ int main() {
     cudaCheck(cudaMalloc(&output_device, M * N * sizeof(float)));
     cudaCheck(cudaMemcpy(input_device, input, M * N * sizeof(float), cudaMemcpyHostToDevice));
 
-    int grid_size = M;
-    int block_size = 32;
-
     // gpu, 计算一行的softmax
-    float total_time_d = TIME_RECORD(repeat_times, ([&]{softmax_row_kernel<<<grid_size, block_size>>>(input_device, output_device, M, N);}));
+    float total_time_d = TIME_RECORD(repeat_times, ([&]{softmax_row_kernel<<<M, 32>>>(input_device, output_device, M, N);}));
     printf("[softmax_row_gpu]: total_time_d = %f ms\n", total_time_d / repeat_times);
     cudaCheck(cudaMemcpy(output, output_device, M * N * sizeof(float), cudaMemcpyDeviceToHost));
     verify_matrix(output, output_ref, M*N);
@@ -171,7 +168,7 @@ int main() {
     printf("[softmax_col_cpu]: total_time_h = %f ms\n", total_time_h2 / repeat_times);
 
     // gpu, 计算一列行的softmax
-    float total_time_d2 = TIME_RECORD(repeat_times, ([&]{softmax_col_kernel<<<grid_size, block_size>>>(input_device, output_device, M, N);}));
+    float total_time_d2 = TIME_RECORD(repeat_times, ([&]{softmax_col_kernel<<<N, 32>>>(input_device, output_device, M, N);}));
     printf("[softmax_col_gpu]: total_time_d = %f ms\n", total_time_d2 / repeat_times);
     cudaCheck(cudaMemcpy(output, output_device, M * N * sizeof(float), cudaMemcpyDeviceToHost));
     verify_matrix(output, output_ref, M*N);
