@@ -34,10 +34,12 @@ __global__ void softmax_kernel(float* input, float* output, int M, int N) {
 
     // 求每一行最大值
     float max_val = -FLT_MAX;
+    #pragma unroll
     for (int i = 0; i < iteration; i++) {
         int col = i * warpSize + laneId;
         max_val = (col < N) ? fmaxf(max_val, input[row * N + col]) : max_val;
     }
+    #pragma unroll
     for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
         max_val = fmaxf(max_val, __shfl_down_sync(0xFFFFFFFF, max_val, offset));
     }
@@ -45,16 +47,19 @@ __global__ void softmax_kernel(float* input, float* output, int M, int N) {
 
     // 求每一行的和，且要减去最大值
     float sum = 0.0f;
+    #pragma unroll
     for (int i = 0; i < iteration; i++) {
         int col = i * warpSize + laneId;
         sum += (col < N) ? expf(input[row * N + col] - s_max_val) : 0.0f;
     }
+    #pragma unroll
     for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
         sum += __shfl_down_sync(0xFFFFFFFF, sum, offset);
     }
     if (laneId == 0) s_sum = sum;  // sum值汇总到第一个线程，第一个线程将它搬运到s_mem
 
     // 计算每一行的softmax
+    #pragma unroll
     for (int i = 0; i < iteration; i++) {
         int col = i * warpSize + laneId;
         if (col < N) output[row * N + col] = expf(input[row * N + col] - s_max_val) / s_sum;
@@ -64,7 +69,7 @@ __global__ void softmax_kernel(float* input, float* output, int M, int N) {
 
 int main() {
     const int M = 2048;
-    const int N = 32;
+    const int N = 64;
     const int repeat_times = 10;
 
     float* input      = (float*)malloc(M * N * sizeof(float));  // 输入是M*N的矩阵
