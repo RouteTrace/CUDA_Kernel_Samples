@@ -92,20 +92,6 @@ int main() {
     printf("[softmax_gpu]: total_time_d = %f ms\n", total_time_d / repeat_times);
     cudaCheck(cudaMemcpy(output, output_device, M * N * sizeof(float), cudaMemcpyDeviceToHost));
     verify_matrix(output, output_ref, M*N);
-    for (int i = 0; i < M; i++) {
-        printf("input: ");
-        for (int j = 0; j < N; j++) {
-            printf("%f,", input[i*N + j]);
-        }
-        printf("\nref:   ");
-        for (int j = 0; j < N; j++) {
-            printf("%f,", output_ref[i*N + j]);
-        }
-        printf("\nout:   ");
-        for (int j = 0; j < N; j++) {
-            printf("%f,", output[i*N + j]);
-        }
-        printf("\n");
-    }
+
     return 0;
 }
