@@ -93,7 +93,7 @@ __global__ void device_transpose_v4(const float* input, float* output, int M, in
 
 int main() {
     size_t M = 12800;
-    size_t N = 12800;
+    size_t N = 1280;
     constexpr size_t BLOCK_SIZE = 32;
     const int repeat_times = 10;
 
@@ -116,7 +116,7 @@ int main() {
 
     // 2.1 call transpose_v0
     dim3 block_size0(BLOCK_SIZE, BLOCK_SIZE);
-    dim3 grid_size0(CEIL(M, BLOCK_SIZE), CEIL(N, BLOCK_SIZE));
+    dim3 grid_size0(CEIL(N, BLOCK_SIZE), CEIL(M, BLOCK_SIZE));
     float total_time0 = TIME_RECORD(repeat_times, ([&]{device_transpose_v0<<<grid_size0, block_size0>>>(d_matrix, d_matrix_tr, M, N);}));
     cudaMemcpy(h_matrix_tr, d_matrix_tr, sizeof(float) * M * N, cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
@@ -126,7 +126,7 @@ int main() {
     
     // 2.2 call transpose_v1
     dim3 block_size1(BLOCK_SIZE, BLOCK_SIZE);
-    dim3 grid_size1(CEIL(N, BLOCK_SIZE), CEIL(M, BLOCK_SIZE));
+    dim3 grid_size1(CEIL(M, BLOCK_SIZE), CEIL(N, BLOCK_SIZE));
     float total_time1 = TIME_RECORD(repeat_times, ([&]{device_transpose_v1<<<grid_size1, block_size1>>>(d_matrix, d_matrix_tr, M, N);}));
     cudaMemcpy(h_matrix_tr, d_matrix_tr, sizeof(float) * M * N, cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
@@ -135,7 +135,7 @@ int main() {
 
     // 2.3 call transpose_v2
     dim3 block_size2(BLOCK_SIZE, BLOCK_SIZE);
-    dim3 grid_size2(CEIL(N, BLOCK_SIZE), CEIL(M, BLOCK_SIZE));
+    dim3 grid_size2(CEIL(M, BLOCK_SIZE), CEIL(N, BLOCK_SIZE));
     float total_time2 = TIME_RECORD(repeat_times, ([&]{device_transpose_v2<<<grid_size2, block_size2>>>(d_matrix, d_matrix_tr, M, N);}));
     cudaMemcpy(h_matrix_tr, d_matrix_tr, sizeof(float) * M * N, cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
@@ -145,7 +145,7 @@ int main() {
 
     // 2.4 call transpose_v3
     dim3 block_size3(BLOCK_SIZE, BLOCK_SIZE);
-    dim3 grid_size3(CEIL(N, BLOCK_SIZE) * CEIL(M, BLOCK_SIZE));
+    dim3 grid_size3(CEIL(M, BLOCK_SIZE) * CEIL(N, BLOCK_SIZE));
     float total_time3 = TIME_RECORD(repeat_times, ([&]{device_transpose_v3<BLOCK_SIZE><<<grid_size3, block_size3>>>(d_matrix, d_matrix_tr, M, N);}));
     cudaMemcpy(h_matrix_tr, d_matrix_tr, sizeof(float) * M * N, cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
@@ -155,7 +155,7 @@ int main() {
 
     // 2.5 call transpose_v4
     dim3 block_size4(BLOCK_SIZE, BLOCK_SIZE);
-    dim3 grid_size4(CEIL(N, BLOCK_SIZE) * CEIL(M, BLOCK_SIZE));
+    dim3 grid_size4(CEIL(M, BLOCK_SIZE) * CEIL(N, BLOCK_SIZE));
     float total_time4 = TIME_RECORD(repeat_times, ([&]{device_transpose_v4<BLOCK_SIZE><<<grid_size4, block_size4>>>(d_matrix, d_matrix_tr, M, N);}));
     cudaMemcpy(h_matrix_tr, d_matrix_tr, sizeof(float) * M * N, cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
