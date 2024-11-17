@@ -55,10 +55,10 @@ elementwise_add<<<grid_size, block_size>>>(a, b, c, N);
 
 // 函数定义
 __global__ void elementwise_add(float* a, float* b, float *c, int N) {
-	int idx = blockDim.x * blockIdx.x + threadIdx.x;
-	if (idx < N) {
-		c[idx] = a[idx] + b[idx];
-	}
+    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+    if (idx < N) {
+        c[idx] = a[idx] + b[idx];
+    }
 }
 ```
 
@@ -71,18 +71,18 @@ int grid_size  = CEIL(CEIL(N,4), block_size);  // 注：在grid维度除以4
 elementwise_add<<<grid_size, block_size>>>(a, b, c, N);
 
 __global__ void elementwise_add_float4(float* a, float* b, float *c, int N) {
-	int idx = (blockDim.x * blockIdx.x + threadIdx.x) * 4;
+    int idx = (blockDim.x * blockIdx.x + threadIdx.x) * 4;
 
-	if (idx < N) {
-		float4 tmp_a = FLOAT4(a[idx]);
-		float4 tmp_b = FLOAT4(b[idx]);
-		float4 tmp_c;
-		tmp_c.x = tmp_a.x + tmp_b.x;
-		tmp_c.y = tmp_a.y + tmp_b.y;
-		tmp_c.z = tmp_a.z + tmp_b.z;
-		tmp_c.w = tmp_a.w + tmp_b.w;
-		FLOAT4(c[idx]) = tmp_c;
-	}
+    if (idx < N) {
+        float4 tmp_a = FLOAT4(a[idx]);
+        float4 tmp_b = FLOAT4(b[idx]);
+        float4 tmp_c;
+        tmp_c.x = tmp_a.x + tmp_b.x;
+        tmp_c.y = tmp_a.y + tmp_b.y;
+        tmp_c.z = tmp_a.z + tmp_b.z;
+        tmp_c.w = tmp_a.w + tmp_b.w;
+        FLOAT4(c[idx]) = tmp_c;
+    }
 }
 ```
 
@@ -94,22 +94,22 @@ $$\sigma(x) = \frac{1}{1 + e^{-x}} $$
 
 ```cpp
 __global__ void sigmoid(float* x, float* y, int N) {
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx < N) y[idx] = 1.0f / (1.0f + expf(-x[idx]));
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < N) y[idx] = 1.0f / (1.0f + expf(-x[idx]));
 }
 
 // float4
 __global__ void sigmoid_float4(float* x, float* y, int N) {
-	int idx = (blockDim.x * blockIdx.x + threadIdx.x) * 4;
-	if (idx < N) {
-		float4 tmp_x = FLOAT4(x[idx]);
-		float4 tmp_y;
-		tmp_y.x = 1.0f / (1.0f + expf(-tmp_x.x));
-		tmp_y.y = 1.0f / (1.0f + expf(-tmp_x.y));
-		tmp_y.z = 1.0f / (1.0f + expf(-tmp_x.z));
-		tmp_y.w = 1.0f / (1.0f + expf(-tmp_x.w));
-		FLOAT4(y[idx]) = tmp_y;
-	}
+    int idx = (blockDim.x * blockIdx.x + threadIdx.x) * 4;
+    if (idx < N) {
+        float4 tmp_x = FLOAT4(x[idx]);
+        float4 tmp_y;
+        tmp_y.x = 1.0f / (1.0f + expf(-tmp_x.x));
+        tmp_y.y = 1.0f / (1.0f + expf(-tmp_x.y));
+        tmp_y.z = 1.0f / (1.0f + expf(-tmp_x.z));
+        tmp_y.w = 1.0f / (1.0f + expf(-tmp_x.w));
+        FLOAT4(y[idx]) = tmp_y;
+    }
 }
 ```
 
@@ -119,22 +119,22 @@ $$ \text{ReLU}(x) = \max(0, x) $$
 
 ```cpp
 __global__ void relu(float* x, float* y, int N) {
-	int idx = blockDim.x * blockIdx.x + threadIdx.x;
-	if (idx < N) y[idx] = fmaxf(0.0f, x[idx]);
-}
+    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+    if (idx < N) y[idx] = fmaxf(0.0f, x[idx]);
+    }
 
 // float4
 __global__ void relu_float4(float* x, float* y, int N) {
-	int idx = (blockDim.x * blockIdx.x + threadIdx.x) * 4;
-	if (idx < N) {
-		float4 tmp_x = FLOAT4(x[idx]);
-		float4 tmp_y;
-		tmp_y.x = fmaxf(0.0f, tmp_x.x);
-		tmp_y.y = fmaxf(0.0f, tmp_x.y);
-		tmp_y.z = fmaxf(0.0f, tmp_x.z);
-		tmp_y.w = fmaxf(0.0f, tmp_x.w);
-		FLOAT4(y[idx]) = tmp_y;
-	}
+    int idx = (blockDim.x * blockIdx.x + threadIdx.x) * 4;
+    if (idx < N) {
+        float4 tmp_x = FLOAT4(x[idx]);
+        float4 tmp_y;
+        tmp_y.x = fmaxf(0.0f, tmp_x.x);
+        tmp_y.y = fmaxf(0.0f, tmp_x.y);
+        tmp_y.z = fmaxf(0.0f, tmp_x.z);
+        tmp_y.w = fmaxf(0.0f, tmp_x.w);
+        FLOAT4(y[idx]) = tmp_y;
+    }
 }
 ```
 
@@ -157,8 +157,8 @@ dim3 grid_size(CIEL(N, BLOCK_SIZE));
 reduce_v1<<<grid_size, block_size>>>(d_x, d_y, N);
 
 __global__ void reduce_v1(const float* input, float* output, int N) {
-	int idx = blockDim.x * blockIdx.x + threadIdx.x;
-	if (idx < N) atomicAdd(output, input[idx]);
+    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+    if (idx < N) atomicAdd(output, input[idx]);
 }
 ```
 
@@ -174,24 +174,24 @@ dim3 grid_size(CIEL(N, BLOCK_SIZE));
 reduce_v2<<<grid_size, block_size>>>(d_x, d_y, N);
 
 __global__ void reduce_v2(const float* input, float* output, int N) {
-	int tid = threadIdx.x;
-	int idx = blockDim.x * blockIdx.x + threadIdx.x;
-	__shared__ float input_s[BLOCK_SIZE];
+    int tid = threadIdx.x;
+    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+    __shared__ float input_s[BLOCK_SIZE];
 
-	// 1. 搬运和线程数量(blockDim.x)相等的数据，到当前block的共享内存中
-	input_s[tid] = (idx < N) ? input[idx] : 0.0f;
-	__syncthreads();
+    // 1. 搬运和线程数量(blockDim.x)相等的数据，到当前block的共享内存中
+    input_s[tid] = (idx < N) ? input[idx] : 0.0f;
+    __syncthreads();
 
-	// 2. 用1/2, 1/4, 1/8...的线程进行折半归约
-	for (int offset = blockDim.x >> 1; offset > 0; offset >>= 1) {
-		if (tid < offset) {  // 2.折半归约
-			input_s[tid] += input_s[tid + offset];
-		}
-		__syncthreads();
-	}
+    // 2. 用1/2, 1/4, 1/8...的线程进行折半归约
+    for (int offset = blockDim.x >> 1; offset > 0; offset >>= 1) {
+        if (tid < offset) {  // 2.折半归约
+            input_s[tid] += input_s[tid + offset];
+        }
+        __syncthreads();
+    }
 
-	// 3. 每个block的第一个线程将计算结果累加到输出中
-	if (tid == 0) atomicAdd(output, input_s[0]);
+    // 3. 每个block的第一个线程将计算结果累加到输出中
+    if (tid == 0) atomicAdd(output, input_s[0]);
 }
 ```
 
@@ -252,34 +252,34 @@ dim3 grid_size(CEIL(CIEL(N, BLOCK_SIZE),4));  // 这里要除以4
 reduce_v3<<<grid_size, block_size>>>(d_x, d_y, N)
 
 __global__ void reduce_v4(float* d_x, float* d_y, const int N) {
-	__shared__ float s_y[32];
-	int idx = (blockDim.x * blockIdx.x + threadIdx.x) * 4;  // 这里要乘以4
-	int warpId = threadIdx.x / warpSize;   // 当前线程位于第几个warp
-	int laneId = threadIdx.x % warpSize;   // 当前线程是warp中的第几个线程
-	float val = 0.0f;
-	if (idx < N) {
-		float4 tmp_x = FLOAT4(d_x[idx]);
-		val += tmp_x.x;
-		val += tmp_x.y;
-		val += tmp_x.z;
-		val += tmp_x.w;
-	}
-	#pragma unroll
-	for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
-		val += __shfl_down_sync(0xFFFFFFFF, val, offset);
-	}
+    __shared__ float s_y[32];
+    int idx = (blockDim.x * blockIdx.x + threadIdx.x) * 4;  // 这里要乘以4
+    int warpId = threadIdx.x / warpSize;   // 当前线程位于第几个warp
+    int laneId = threadIdx.x % warpSize;   // 当前线程是warp中的第几个线程
+    float val = 0.0f;
+    if (idx < N) {
+        float4 tmp_x = FLOAT4(d_x[idx]);
+        val += tmp_x.x;
+        val += tmp_x.y;
+        val += tmp_x.z;
+        val += tmp_x.w;
+    }
+    #pragma unroll
+    for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
+        val += __shfl_down_sync(0xFFFFFFFF, val, offset);
+    }
 
-	if (laneId == 0) s_y[warpId] = val;
-	__syncthreads();
+    if (laneId == 0) s_y[warpId] = val;
+    __syncthreads();
 
-	if (warpId == 0) {
-		int warpNum = blockDim.x / warpSize;
-		val = (laneId < warpNum) ? s_y[laneId] : 0.0f;
-		for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
-			val += __shfl_down_sync(0xFFFFFFFF, val, offset);
-		}
-		if (landId == 0) atomicAdd(d_y, val);
-	}
+    if (warpId == 0) {
+        int warpNum = blockDim.x / warpSize;
+        val = (laneId < warpNum) ? s_y[laneId] : 0.0f;
+        for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
+            val += __shfl_down_sync(0xFFFFFFFF, val, offset);
+        }
+        if (landId == 0) atomicAdd(d_y, val);
+    }
 }
 ```
 
@@ -299,15 +299,15 @@ $$
 CPU 写法（有时也会考察）：
 ```cpp
 void softmax(float* input, float* output, int N) {
-	int M = *(std::max_element(input, input + N));
-	float div = 0;
-	for (int i = 0; i < N; i++) {
-		output[i] = std::exp(input[i] - M);
-		div += output[i];
-	}
-	for (int i = 0; i < N; i++) {
-		output[i] /= div;
-	}
+    int M = *(std::max_element(input, input + N));
+    float div = 0;
+    for (int i = 0; i < N; i++) {
+        output[i] = std::exp(input[i] - M);
+        div += output[i];
+    }
+    for (int i = 0; i < N; i++) {
+        output[i] /= div;
+    }
 }
 ```
 
@@ -320,65 +320,65 @@ CUDA写法：
 
 ```cpp
 __device__ static float atomicMax(float* address, float val) {
-	int* address_as_i = (int*)address;
-	int old = *address_as_i;
-	int assumed;
-	do {
-		assumed = old;
-		old = atomicCAS(address_as_i, assumed, __float_as_int(fmaxf(val, __int_as_float(assumed))));
-	} while (assumed != old);
-	return __int_as_float(old);
+    int* address_as_i = (int*)address;
+    int old = *address_as_i;
+    int assumed;
+    do {
+        assumed = old;
+        old = atomicCAS(address_as_i, assumed, __float_as_int(fmaxf(val, __int_as_float(assumed))));
+    } while (assumed != old);
+    return __int_as_float(old);
 }
 
 __global__ void max_kernel(float* input, float* max_val, int N) {
-	__shared__ float s_mem[32];
-	int idx = blockDim.x * blockIdx.x + threadIdx.x;
-	int warpId = threadIdx.x / warpSize;
-	int laneId = threadIdx.x % warpSize;
+    __shared__ float s_mem[32];
+    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+    int warpId = threadIdx.x / warpSize;
+    int laneId = threadIdx.x % warpSize;
 
-	float val = (idx < N) ? input[idx] : (-FLT_MAX);
-	for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
-		val = fmaxf(val, __shfl_down_sync(0xFFFFFFFF, val, offset));
-	}
-	if (laneId == 0) s_mem[warpId] = val;
-	__syncthreads();
+    float val = (idx < N) ? input[idx] : (-FLT_MAX);
+    for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
+        val = fmaxf(val, __shfl_down_sync(0xFFFFFFFF, val, offset));
+    }
+    if (laneId == 0) s_mem[warpId] = val;
+    __syncthreads();
 
-	if (warpId == 0) {
-		int warpNum = blockDim.x / warpSize;
-		val = (laneId < warpNum) ? s_mem[laneId] : (-FLT_MAX);
-		for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
-			val = fmaxf(val, __shfl_down_sync(0xFFFFFFFF, val, offset));
-		}
-		if (laneId == 0) atomicMax(max_val, val);
-	}
+    if (warpId == 0) {
+        int warpNum = blockDim.x / warpSize;
+        val = (laneId < warpNum) ? s_mem[laneId] : (-FLT_MAX);
+        for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
+            val = fmaxf(val, __shfl_down_sync(0xFFFFFFFF, val, offset));
+        }
+        if (laneId == 0) atomicMax(max_val, val);
+    }
 }
 
 __global__ void sum_kernel(float* input, float* sum, float* max_val, int N) {
-	__shared__ float s_mem[32];
-	int idx = blockDim.x * blockIdx.x + threadIdx.x;
-	int warpId = threadIdx.x / warpSize;
-	int laneId = threadIdx.x % warpSize;
+    __shared__ float s_mem[32];
+    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+    int warpId = threadIdx.x / warpSize;
+    int laneId = threadIdx.x % warpSize;
 
-	float val = (idx < N) ? expf(input[idx] - *max_val) : 0.0f;
-	for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
-		val += __shfl_down_sync(0xFFFFFFFF, val, offset);
-	}
-	if (laneId == 0) s_mem[warpId] = val;
-	__syncthreads();
+    float val = (idx < N) ? expf(input[idx] - *max_val) : 0.0f;
+    for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
+        val += __shfl_down_sync(0xFFFFFFFF, val, offset);
+    }
+    if (laneId == 0) s_mem[warpId] = val;
+    __syncthreads();
 
-	if (warpId == 0) {
-		int warpNum = blockDim.x / warpSize;
-		val = (laneId < warpNum) ? s_mem[laneId] : 0.0f;
-		for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
-			val += __shfl_down_sync(0xFFFFFFFF, val, offset);
-		}
-		if (laneId == 0) atomicAdd(sum, val);
-	}
+    if (warpId == 0) {
+        int warpNum = blockDim.x / warpSize;
+        val = (laneId < warpNum) ? s_mem[laneId] : 0.0f;
+        for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
+            val += __shfl_down_sync(0xFFFFFFFF, val, offset);
+        }
+        if (laneId == 0) atomicAdd(sum, val);
+    }
 }
 
 __global__ void softmax_kernel(float* input, float* output, float* sum, float* max_val, int N) {
-	int idx = blockDim.x * blockIdx.x + threadIdx.x;
-	if (idx < N) output[idx] = expf(input[idx] - *max_val) / (*sum);
+    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+    if (idx < N) output[idx] = expf(input[idx] - *max_val) / (*sum);
 }
 
 // 初始化相关变量
@@ -405,26 +405,26 @@ softmax_kernel<<<gird_size, block_size>>>(input, output, sum, max_val, N);
 native：
 ```cpp
 __global__ void transpose(float* input, float* output, int M, int N) {
-	// input的row和col
-	int row = blockDim.y * blockIdx.y + threadIdx.y;
-	int col = blockDim.x * blockIdx.x + threadIdx.x;
+    // input的row和col
+    int row = blockDim.y * blockIdx.y + threadIdx.y;
+    int col = blockDim.x * blockIdx.x + threadIdx.x;
 
-	if (row < M && col < N) {
-		output[col * M + row] = input[row * N + col];
-	}
+    if (row < M && col < N) {
+        output[col * M + row] = input[row * N + col];
+    }
 }
 ```
 
 合并写入：
 ```cpp
 __global__ void transpose(float* input, float* output, int M, int N) {
-	// output的row和col
-	int row = blockDim.y * blockIdx.y + threadIdx.y;
-	int col = blockDim.x * blockIdx.x + threadIdx.x;
+    // output的row和col
+    int row = blockDim.y * blockIdx.y + threadIdx.y;
+    int col = blockDim.x * blockIdx.x + threadIdx.x;
 
-	if (row < N && col < M) {
-		output[row * M + col] = __ldg(&input[col * N + row]);  // 合并写入，读取使用__ldg进行缓存
-	}
+    if (row < N && col < M) {
+        output[row * M + col] = __ldg(&input[col * N + row]);  // 合并写入，读取使用__ldg进行缓存
+    }
 }
 ```
 
@@ -438,22 +438,22 @@ dim3 grid(CEIL(M,32), CEIL(N,32));
 
 template <const int BLOCK_SIZE>
 __global__ void transpose(float* input, float* output, int M, int N) {
-	__shared__ float s_mem[BLOCK_SIZE][BLOCK_SIZE + 1];  // 避免bank conflict
-	int bx = blockDim.x * BLOCK_SIZE;
-	int by = blockDim.y * BLOCK_SIZE;
+    __shared__ float s_mem[BLOCK_SIZE][BLOCK_SIZE + 1];  // 避免bank conflict
+    int bx = blockDim.x * BLOCK_SIZE;
+    int by = blockDim.y * BLOCK_SIZE;
 
-	int x1 = bx + threadIdx.x;
-	int y1 = by + threadIdx.y;
-	if (x1 < N && y1 < M) {
-		s_mem[threadIdx.y][threadIdx.x] = input[y1 * N + x1];
-	}
-	__syncthreads();
+    int x1 = bx + threadIdx.x;
+    int y1 = by + threadIdx.y;
+    if (x1 < N && y1 < M) {
+        s_mem[threadIdx.y][threadIdx.x] = input[y1 * N + x1];
+    }
+    __syncthreads();
 
-	int x2 = by + threadIdx.x;
-	int y2 = bx + threadIdx.y;
-	if (x2 < M && y2 < N) {
-		output[y2 * M + x2] = s_mem[threadIdx.x][threadIdx.y];  // padding后，不存在bank conflict
-	}
+    int x2 = by + threadIdx.x;
+    int y2 = bx + threadIdx.y;
+    if (x2 < M && y2 < N) {
+        output[y2 * M + x2] = s_mem[threadIdx.x][threadIdx.y];  // padding后，不存在bank conflict
+    }
 }
 ```
 
@@ -470,16 +470,16 @@ dim3 grid((M+BLOCK_SIZE-1)/BLOCK_SIZE, (N+BLOCK_SIZE-1)/BLOCK_SIZE);
 sgemm<<<grid, block>>>(d_A, d_B, d_C, M, N, K);
 
 __global__ void sgemm(float* A, float* B, float* C, int M, int N, int K) {
-	int col = blockDim.x * blockIdx.x + threadIdx.x;
-	int row = blockDim.y * blockIdx.y + threadIdx.y;
-	if (row >= M || col >= N) return;
+    int col = blockDim.x * blockIdx.x + threadIdx.x;
+    int row = blockDim.y * blockIdx.y + threadIdx.y;
+    if (row >= M || col >= N) return;
 
-	float accum = 0.0f;
-	for (int i = 0; i < K; i++) {
-		accum += A[row * K + i] * B[i * N + col];
-	}
+    float accum = 0.0f;
+    for (int i = 0; i < K; i++) {
+        accum += A[row * K + i] * B[i * N + col];
+    }
 
-	C[row * N + col] = accum;
+    C[row * N + col] = accum;
 }
 ```
 
@@ -492,41 +492,41 @@ dim3 grid(CEIL(M,BLOCK_SIZE), CEIL(N,BLOCK_SIZE));
 sgemm<<<grid, block>>>(d_A, d_B, d_C, M, N, K);
 
 __global__ void sgemm(float* A, float* B, float* C, int M, int N, int K) {
-	int idx = blockDim.x * blockIdx.x + threadIdx.x;
-	int idy = blockDim.y * blockIdx.y + threadIdx.y;
-	if (idx >= M || idy >= N) return;
+    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+    int idy = blockDim.y * blockIdx.y + threadIdx.y;
+    if (idx >= M || idy >= N) return;
 
-	int bx = blockIdx.x;
-	int by = blockIdx.y;
-	int tx = threadIdx.x;
-	int ty = threadIdx.y;
+    int bx = blockIdx.x;
+    int by = blockIdx.y;
+    int tx = threadIdx.x;
+    int ty = threadIdx.y;
 
-	const int BM = BLOCK_SIZE;
-	const int BN = BLOCK_SIZE;
-	const int BK = BLOCK_SIZE;
-	__shared__ float As[BM * BK];
-	__shared__ float Bs[BK * BN];
+    const int BM = BLOCK_SIZE;
+    const int BN = BLOCK_SIZE;
+    const int BK = BLOCK_SIZE;
+    __shared__ float As[BM * BK];
+    __shared__ float Bs[BK * BN];
 
-	// 初始化block tile起始位置
-	A = &A[(by * BM) * K];
-	B = &B[bx * BN];
-	C = &C[(by * BM) * N + bx * BN];
+    // 初始化block tile起始位置
+    A = &A[(by * BM) * K];
+    B = &B[bx * BN];
+    C = &C[(by * BM) * N + bx * BN];
 
-	float accum = 0.0f;
-	for (int k = 0; k < K; k += BK) {
-		// 搬运 global ==> shared
-		As[ty * BK + tx] = A[ty * K + tx];
-		Bs[ty * BN + tx] = B[ty * N + tx];
-		__syncthreads();
-		A = A + BK;
-		B = B + BK * N;
-		for (int i = 0; i < BK; i++) {
-			accum += As[ty * BK + i] * Bs[i * BN + tx];
-		}
-		__syncthreads();
-	}
+    float accum = 0.0f;
+    for (int k = 0; k < K; k += BK) {
+        // 搬运 global ==> shared
+        As[ty * BK + tx] = A[ty * K + tx];
+        Bs[ty * BN + tx] = B[ty * N + tx];
+        __syncthreads();
+        A = A + BK;
+        B = B + BK * N;
+        for (int i = 0; i < BK; i++) {
+            accum += As[ty * BK + i] * Bs[i * BN + tx];
+        }
+        __syncthreads();
+    }
 
-	C[ty * N + tx] = accum;
+    C[ty * N + tx] = accum;
 }
 ```
 
@@ -543,58 +543,58 @@ template<const int BM,
          const int TM,
          const int TN>
 __global__ void sgemm(float* A, float* B, float* C, int M, int N, int K) {
-	int bx = blockIdx.x;
-	int by = blockIdy.y;
+    int bx = blockIdx.x;
+    int by = blockIdy.y;
 
-	int block_row_thread = BN / TN;  // block中一行的thread数量
-	int block_col_thread = BM / TM;  // block中一列的thread数量
-	int thread_num = block_row_thread * block_col_thread;  // block中thread总量
+    int block_row_thread = BN / TN;  // block中一行的thread数量
+    int block_col_thread = BM / TM;  // block中一列的thread数量
+    int thread_num = block_row_thread * block_col_thread;  // block中thread总量
 
-	int tx = (threadIdx.x % block_row_thread) * TN;  // threadtile左上角x坐标
-	int ty = (threadIdx.x / block_row_thread) * TM;  // threadtile左上角y坐标
+    int tx = (threadIdx.x % block_row_thread) * TN;  // threadtile左上角x坐标
+    int ty = (threadIdx.x / block_row_thread) * TM;  // threadtile左上角y坐标
 
-	__shared__ float As[BM * BK];
-	__shared__ float Bs[BK * BN];
+    __shared__ float As[BM * BK];
+    __shared__ float Bs[BK * BN];
 
-	A = &A[by * BM * K];
-	B = &B[bx * BN];
-	C = &C[by * BM * N + bx * BN];
+    A = &A[by * BM * K];
+    B = &B[bx * BN];
+    C = &C[by * BM * N + bx * BN];
 
-	int a_tile_row = threadIdx.x / BK;
-	int a_tile_col = threadIdx.x % BK;
-	int a_tile_stride = thread_num / BK;  // BM/(BM/(thread_num/BK)) = thread_num/BK = stride
+    int a_tile_row = threadIdx.x / BK;
+    int a_tile_col = threadIdx.x % BK;
+    int a_tile_stride = thread_num / BK;  // BM/(BM/(thread_num/BK)) = thread_num/BK = stride
 
-	int b_tile_row = threadIdx.x / BN;
-	int b_tile_col = threadIdx.x % BN;
-	int b_tile_stride = thread_num / BN;
+    int b_tile_row = threadIdx.x / BN;
+    int b_tile_col = threadIdx.x % BN;
+    int b_tile_stride = thread_num / BN;
 
-	float accum[TM][TN] = {0.0f};
-	for (int k = 0; k < K; k += BK) {
-		for (int i = 0; i < BM; i += a_tile_stride) {
-			As[(a_tile_row + i) * BK + a_tile_col] = A[(a_tile_row + i) * K + a_tile_col];
-		}
-		for (int i = 0; i < BK; i += b_tile_stride) {
-			Bs[(b_tile_row + i) * BN + b_tile_col] = B[(b_tile_row + i) * N + b_tile_col];
-		}
-		__syncthreads();
+    float accum[TM][TN] = {0.0f};
+    for (int k = 0; k < K; k += BK) {
+        for (int i = 0; i < BM; i += a_tile_stride) {
+            As[(a_tile_row + i) * BK + a_tile_col] = A[(a_tile_row + i) * K + a_tile_col];
+        }
+        for (int i = 0; i < BK; i += b_tile_stride) {
+            Bs[(b_tile_row + i) * BN + b_tile_col] = B[(b_tile_row + i) * N + b_tile_col];
+        }
+        __syncthreads();
 
-		A += BK;
-		B += BK * N;
+        A += BK;
+        B += BK * N;
 
-		for (int row = 0; row < TM; row++) {
-			for (int col = 0; col < TN; col++) {
-				for (int i = 0; i < BK; i++) {
-					accum[row][col] += As[(ty + row) * BK + i] * Bs[i * BN + (tx + col)];
-				}
-			}
-		}
-		__syncthreads();
-	}
-	for (int row = 0; row < TM; row++) {
-		for (int col = 0; col < TN; col++) {
-			C[(ty + row) * N + (tx + col)] = accum[row][col];
-		}
-	}
+        for (int row = 0; row < TM; row++) {
+            for (int col = 0; col < TN; col++) {
+                for (int i = 0; i < BK; i++) {
+                    accum[row][col] += As[(ty + row) * BK + i] * Bs[i * BN + (tx + col)];
+                }
+            }
+        }
+        __syncthreads();
+    }
+    for (int row = 0; row < TM; row++) {
+        for (int col = 0; col < TN; col++) {
+            C[(ty + row) * N + (tx + col)] = accum[row][col];
+        }
+    }
 }
 ```
 
