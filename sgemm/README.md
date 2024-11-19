@@ -1,4 +1,7 @@
 # CUDA SGEMM 优化
+
+本项目参考并修改自 [NVIDIA_SGEMM_PRACTICE](https://github.com/wangzyon/NVIDIA_SGEMM_PRACTICE)，加入了更多的图例和 CUDA 编程解释，相关引用见文末。
+
 ## 开发环境
 设备：NVIDIA GeForce GTX 1050
 ```
