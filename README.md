@@ -7,14 +7,14 @@
 
 目前覆盖以下 CUDA 常见算子及其优化版本：
 
-|   文件夹     |    描述    |               内容              |
-| :---------: | :------: | :-------------------------------: |
-|   example   | 一些简单的例子  |               /             |
-| elementwise | 数组对应元素计算 |        add                 |
-|    gemv     |  矩阵乘向量   |           sgemv               |
-|   reduce    |  归约计算优化  | sum, max, softmax, softmax_matrix |
-|    sgemm    |  矩阵乘优化   |   naive, blocktile, threadtile, ... |
-|  transpose  |  矩阵转置优化  |   naive, 优化访存并解决bank conflict  |
+|     文件夹     |    描述    |                内容                 | 考察频率 |
+| :---------: | :------: | :-------------------------------: | :--: |
+|   example   | 一些简单的例子  |                 /                 |  /   |
+| elementwise | 数组对应元素计算 |                add                |  低   |
+|    gemv     |  矩阵乘向量   |               sgemv               |  低   |
+|   reduce    |  归约计算优化  | sum, max, softmax, softmax_matrix |  高   |
+|    sgemm    |  矩阵乘优化   | naive, blocktile, threadtile, ... |  中   |
+|  transpose  |  矩阵转置优化  |    naive, 优化访存并解决bank conflict    |  中   |
 
 
 ## 算子手撕说明
