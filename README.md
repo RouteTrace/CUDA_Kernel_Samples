@@ -2,8 +2,8 @@
 ## 引言
 本项目是 CUDA **算子手撕与面试指南**：
 1. 汇总了面试高频的 CUDA 算子题目和优化策略，包含面试高频算子的编写示例
-2. 项目从算子 native 实现到优化版本均包含完整代码，便于调试与性能分析
-3. 每个算子附有相关的 GPU 知识点，帮助求职者高效备战 CUDA 编程面试。
+2. 项目从算子 naive 实现到优化版本均包含完整代码，便于调试与性能分析
+3. 每个算子附有相关的 GPU 知识点，帮助求职者高效备战 CUDA 编程面试
 
 目前覆盖以下 CUDA 常见算子及其优化版本：
 
@@ -13,8 +13,8 @@
 | elementwise | 数组对应元素计算 |        add                 |
 |    gemv     |  矩阵乘向量   |           sgemv               |
 |   reduce    |  归约计算优化  | sum, max, softmax, softmax_matrix |
-|    sgemm    |  矩阵乘优化   |   native, blocktile, threadtile, ... |
-|  transpose  |  矩阵转置优化  |   native, 优化访存并解决bank conflict  |
+|    sgemm    |  矩阵乘优化   |   naive, blocktile, threadtile, ... |
+|  transpose  |  矩阵转置优化  |   naive, 优化访存并解决bank conflict  |
 
 
 ## 算子手撕说明
@@ -41,7 +41,7 @@
 **算子描述**：elementwise 是最简单的**一类算子**，其指的是对数据进行逐元素操作，例如将两个等长的数组对应元素相加（[add](./elementwise/add.cu)）。另外在深度学习中，激活函数会对输入数据的每个元素求对应激活值，故激活函数也算在 elementwise 范围内。
 
 算子主要分两种写法：
-1. native：每个线程负责一个元素的运算
+1. naive：每个线程负责一个元素的运算
 2. 使用**float4**等向量化访存方式：只对大规模数据有加速效果，需要注意，**要在 grid 上除以 4**，而不是在 block 上除以 4，否则会降低SM的占用率，可以参考👉[grid_size 和 block_size 选择](https://blog.csdn.net/LostUnravel/article/details/135721041)，grid_size 不小于 SM上最大同时执行的线程数/最大同时执行的线程块数 (Occupancy)，向量化存取的好处在于可以提高带宽利用率，减少缓存利用率。
 
 **源码文件夹**：[./elementwise](./elementwise)
@@ -50,7 +50,7 @@
 
 源码：[./elementwise/add.cu](./elementwise/add.cu)
 
-### native版
+### naive版
 ```cpp
 // block_size，grid_size 和函数调用
 int block_size = 1024;
@@ -153,7 +153,7 @@ __global__ void relu_float4(float* x, float* y, int N) {
 
 源码：[./reduce/sum/sum.cu](./reduce/sum/sum.cu)
 
-### native版
+### naive版
 
 每个线程通过原子函数 `atomicAdd`，往同一个全局内存里面写数据，原子函数会导致线程变成序列化，丧失并行性，算子性能大大降低，不能滥用：
 
@@ -419,7 +419,7 @@ softmax_kernel<<<gird_size, block_size>>>(input, output, sum, max_val, N);
 
 **源码文件夹**：[./transpose](./transpose)
 
-native：
+naive：
 ```cpp
 __global__ void transpose(float* input, float* output, int M, int N) {
     // input的row和col
@@ -477,11 +477,11 @@ __global__ void transpose(float* input, float* output, int M, int N) {
 # sgemm
 **考察频率**：<span style="color: red; font-weight: bold;">中</span>
 
-**算子描述**：指的是矩阵乘。矩阵乘是 CUDA 学习时的经典案例，涉及多种 CUDA 编程中的常用优化技巧。建议阅读 [./sgemm/README.md](./sgemm/README.md)。但手撕时难度往往较大，建议优先掌握最简单的 native 版本以及 block_tile 版本。掌握 block_tile 版本后，只需要加一些代码就可以优化为 thread_tile 版本，故也可以考虑掌握。其余的更高效的优化版本，个人认为了解其原理即可，不必强求面试时手写。
+**算子描述**：指的是矩阵乘。矩阵乘是 CUDA 学习时的经典案例，涉及多种 CUDA 编程中的常用优化技巧。建议阅读 [./sgemm/README.md](./sgemm/README.md)。但手撕时难度往往较大，建议优先掌握最简单的 naive 版本以及 block_tile 版本。掌握 block_tile 版本后，只需要加一些代码就可以优化为 thread_tile 版本，故也可以考虑掌握。其余的更高效的优化版本，个人认为了解其原理即可，不必强求面试时手写。
 
 **源码文件夹**：[./sgemm](./sgemm)
 
-## native 版
+## naive 版
 ```cpp
 // C(MxN) = A(MxK) * B(KxN) 行优先
 // 每个线程处理一个输出矩阵中的元素

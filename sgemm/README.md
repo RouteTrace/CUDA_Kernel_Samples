@@ -47,7 +47,7 @@ bash tools/test.sh  # 日志保存在./test, 图片保存在./images
 - **访存量**”（memory access）：通常指的是GPU核心（CUDA核心）或线程所需从全局内存中读取或写入的数据量。
 - **计算访存比**：每秒计算量与每秒访存量之比。
 
-## Kernel1：Native 实现 (global memory)
+## Kernel1：Naive 实现 (global memory)
 <div align=center>
 <img src="./images/kernel_cublas_vs_1.png" width = "700"/>
 </div>
@@ -104,7 +104,7 @@ void sgemm_v1(int M, int N, int K, float alpha, float *A, float *B, float beta, 
 1. 在block中申请等同于块大小的共享内存，每个 block 从全局内存 (global memory) 中读取数据并保存在共享内存中
 2. 由于块的尺寸大于 $1\times 1$，所以读取全局内存的次数会按块的尺寸成倍减小
 3. 因为共享内存在一个 block 中是共享的，这样一个block内的元素在重复读取同一行（列）时，可以直接从共享内存中读取
-4. 尽管总的读取次数增加了（上图中全局内存的访问次数变为原来的一半，共享内存的访问次数等于native实现的读取次数），但是全局内存的访问次数显著减少，而共享内存的访问次数虽然很多但由于共享内存的访问延迟是远小于全局内存的，所以**总的访问延迟还是显著减小**的
+4. 尽管总的读取次数增加了（上图中全局内存的访问次数变为原来的一半，共享内存的访问次数等于naive实现的读取次数），但是全局内存的访问次数显著减少，而共享内存的访问次数虽然很多但由于共享内存的访问延迟是远小于全局内存的，所以**总的访问延迟还是显著减小**的
 
 ### 分析
 性能相比kernel1有所提升，但相比cuBLAS的实现，差距还是很大，具体分析如下：
