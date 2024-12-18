@@ -452,6 +452,7 @@ __global__ void transpose(float* input, float* output, int M, int N) {
 // 输入矩阵是M行N列，输出矩阵是N行M列
 dim3 block(32, 32);
 dim3 grid(CEIL(N,32), CEIL(M,32));  // 根据input的形状(M行N列)进行切块
+transpose<32><<<grid, block>>>(input, output, M, N);
 
 template <const int BLOCK_SIZE>
 __global__ void transpose(float* input, float* output, int M, int N) {
