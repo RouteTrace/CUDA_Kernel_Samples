@@ -89,6 +89,48 @@ __global__ void softmax_row_kernel(float* input, float* output, int M, int N) {
     }
 }
 
+// gpu: 计算每行的softmax, 改用 __shfl_xor_sync 后, 每个线程的
+// 寄存器的 max_val 和 sum 都是最终的结果，就不用写到共享内存再读取了
+__global__ void softmax_row_kernel2(float* input, float* output, int M, int N) {
+    int laneId = threadIdx.x % warpSize;
+    // 当前行
+    int row = blockIdx.x;
+    if (row >= M) return;
+
+    int iteration = CEIL(N, warpSize);  // 每个线程负责计算的数据个数
+
+    // 求每一行最大值
+    float max_val = -FLT_MAX;
+    #pragma unroll
+    for (int i = 0; i < iteration; i++) {
+        int col = i * warpSize + laneId;
+        max_val = (col < N) ? fmaxf(max_val, input[row * N + col]) : max_val;
+    }
+    #pragma unroll
+    for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
+        max_val = fmaxf(max_val, __shfl_xor_sync(0xFFFFFFFF, max_val, offset));
+    }
+
+    // 求每一行的和，且要减去最大值
+    float sum = 0.0f;
+    #pragma unroll
+    for (int i = 0; i < iteration; i++) {
+        int col = i * warpSize + laneId;
+        sum += (col < N) ? expf(input[row * N + col] - max_val) : 0.0f;
+    }
+    #pragma unroll
+    for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
+        sum += __shfl_xor_sync(0xFFFFFFFF, sum, offset);
+    }
+
+    // 计算每一行的softmax
+    #pragma unroll
+    for (int i = 0; i < iteration; i++) {
+        int col = i * warpSize + laneId;
+        if (col < N) output[row * N + col] = expf(input[row * N + col] - max_val) / sum;
+    }
+}
+
 // gpu: 计算每列的softmax
 __global__ void softmax_col_kernel(float* input, float* output, int M, int N) {
     __shared__ float s_max_val;
@@ -134,6 +176,48 @@ __global__ void softmax_col_kernel(float* input, float* output, int M, int N) {
     }
 }
 
+// gpu: 计算每列的softmax, 改用 __shfl_xor_sync 后，每个线程的
+// 寄存器的 max_val 和 sum 都是最终的结果，就不用写到共享内存再读取了
+__global__ void softmax_col_kernel2(float* input, float* output, int M, int N) {
+    int laneId = threadIdx.x % warpSize;
+    // 当前列
+    int col = blockIdx.x;
+    if (col >= N) return;
+
+    int iteration = CEIL(M, warpSize);  // 每个线程负责计算的数据个数
+
+    // 求每一列最大值
+    float max_val = -FLT_MAX;
+    #pragma unroll
+    for (int i = 0; i < iteration; i++) {
+        int row = i * warpSize + laneId;
+        max_val = (row < M) ? fmaxf(max_val, input[row * N + col]) : max_val;
+    }
+    #pragma unroll
+    for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
+        max_val = fmaxf(max_val, __shfl_xor_sync(0xFFFFFFFF, max_val, offset));
+    }
+
+    // 求每一列的和，且要减去最大值
+    float sum = 0.0f;
+    #pragma unroll
+    for (int i = 0; i < iteration; i++) {
+        int row = i * warpSize + laneId;
+        sum += (row < M) ? expf(input[row * N + col] - max_val) : 0.0f;
+    }
+    #pragma unroll
+    for (int offset = warpSize >> 1; offset > 0; offset >>= 1) {
+        sum += __shfl_xor_sync(0xFFFFFFFF, sum, offset);
+    }
+
+    // 计算每一列的softmax
+    #pragma unroll
+    for (int i = 0; i < iteration; i++) {
+        int row = i * warpSize + laneId;
+        if (row < M) output[row * N + col] = expf(input[row * N + col] - max_val) / sum;
+    }
+}
+
 
 int main() {
     const int M = 2048;
@@ -158,7 +242,7 @@ int main() {
     cudaCheck(cudaMemcpy(input_device, input, M * N * sizeof(float), cudaMemcpyHostToDevice));
 
     // gpu, 计算一行的softmax
-    float total_time_d = TIME_RECORD(repeat_times, ([&]{softmax_row_kernel<<<M, 32>>>(input_device, output_device, M, N);}));
+    float total_time_d = TIME_RECORD(repeat_times, ([&]{softmax_row_kernel2<<<M, 32>>>(input_device, output_device, M, N);}));
     printf("[softmax_row_gpu]: total_time_d = %f ms\n", total_time_d / repeat_times);
     cudaCheck(cudaMemcpy(output, output_device, M * N * sizeof(float), cudaMemcpyDeviceToHost));
     verify_matrix(output, output_ref, M*N);
@@ -168,7 +252,7 @@ int main() {
     printf("[softmax_col_cpu]: total_time_h = %f ms\n", total_time_h2 / repeat_times);
 
     // gpu, 计算一列行的softmax
-    float total_time_d2 = TIME_RECORD(repeat_times, ([&]{softmax_col_kernel<<<N, 32>>>(input_device, output_device, M, N);}));
+    float total_time_d2 = TIME_RECORD(repeat_times, ([&]{softmax_col_kernel2<<<N, 32>>>(input_device, output_device, M, N);}));
     printf("[softmax_col_gpu]: total_time_d = %f ms\n", total_time_d2 / repeat_times);
     cudaCheck(cudaMemcpy(output, output_device, M * N * sizeof(float), cudaMemcpyDeviceToHost));
     verify_matrix(output, output_ref, M*N);
