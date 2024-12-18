@@ -65,8 +65,7 @@ int main() {
     cudaMalloc(&output_device, 1 * sizeof(float));
     cudaMemcpy(input_device, input, N * sizeof(float), cudaMemcpyHostToDevice);
 
-    
-    // softmax1
+    // max
     int block_size = BLOCK_SIZE;
     int grid_size  = CEIL(N, BLOCK_SIZE);
     float total_time_1 = TIME_RECORD(repeat_times, ([&]{max_kernel<<<grid_size, block_size>>>(input_device, output_device, N);}));

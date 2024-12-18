@@ -456,11 +456,11 @@ dim3 grid(CEIL(M,32), CEIL(N,32));
 template <const int BLOCK_SIZE>
 __global__ void transpose(float* input, float* output, int M, int N) {
     __shared__ float s_mem[BLOCK_SIZE][BLOCK_SIZE + 1];  // 避免bank conflict
-    int bx = blockDim.x * BLOCK_SIZE;
-    int by = blockDim.y * BLOCK_SIZE;
-
+    int bx = blockIdx.x * BLOCK_SIZE;
+    int by = blockIdx.y * BLOCK_SIZE;
     int x1 = bx + threadIdx.x;
     int y1 = by + threadIdx.y;
+
     if (x1 < N && y1 < M) {
         s_mem[threadIdx.y][threadIdx.x] = input[y1 * N + x1];
     }

@@ -20,13 +20,13 @@ shared_memory 优化：
 2. device_transpose_v4：对**共享内存做padding**，解决bank conflict
 
 ## 不同kernel的运行效率
-在 M = N = 12800, BLOCK_SIZE = 32 的情况下测试：
+在 M = 12800, N = 1280, BLOCK_SIZE = 32 的情况下测试：
 ```
-[device_transpose_v0] Average time: (52.536610) ms
-[device_transpose_v1] Average time: (42.727524) ms
-[device_transpose_v2] Average time: (18.927723) ms
-[device_transpose_v3] Average time: (32.587059) ms
-[device_transpose_v4] Average time: (13.613620) ms
+[device_transpose_v0] Average time: (6.871402) ms
+[device_transpose_v1] Average time: (4.286345) ms
+[device_transpose_v2] Average time: (2.131379) ms
+[device_transpose_v3] Average time: (3.809322) ms
+[device_transpose_v4] Average time: (2.037318) ms
 ```
 
 ## 参考 
