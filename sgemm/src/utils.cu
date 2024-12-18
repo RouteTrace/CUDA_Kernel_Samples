@@ -109,37 +109,37 @@ float call_kernel(int kernel_num, bool record, int M, int N, int K, float alpha,
     }
     else if (kernel_num == 1) {
         dim3 blockDim(32, 32);
-        dim3 gridDim(CEIL_DIV(M, 32), CEIL_DIV(N, 32));
+        dim3 gridDim(CEIL_DIV(N, 32), CEIL_DIV(M, 32));
         total_time = TIME_RECORD(repeat_times, ([&]{sgemm_v1<<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);}));
     }
     else if (kernel_num == 2) {
         dim3 blockDim(1024);
-        dim3 gridDim(CEIL_DIV(M, 32), CEIL_DIV(N, 32));
+        dim3 gridDim(CEIL_DIV(N, 32), CEIL_DIV(M, 32));
         total_time = TIME_RECORD(repeat_times, ([&]{sgemm_v2<32><<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);}));
     }
     else if (kernel_num == 3) {
         dim3 blockDim(512);
-        dim3 gridDim(CEIL_DIV(M, 64), CEIL_DIV(N, 64));
+        dim3 gridDim(CEIL_DIV(N, 64), CEIL_DIV(M, 64));
         total_time = TIME_RECORD(repeat_times, ([&]{sgemm_v3<64, 64, 8, 8><<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);}));
     }
     else if (kernel_num == 4) {
         dim3 blockDim(256);
-        dim3 gridDim(CEIL_DIV(M, 128), CEIL_DIV(N, 128));
+        dim3 gridDim(CEIL_DIV(N, 128), CEIL_DIV(M, 128));
         total_time = TIME_RECORD(repeat_times, ([&]{sgemm_v4<128, 128, 8, 8, 8><<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);}));
     }
     else if (kernel_num == 5) {
         dim3 blockDim(256);
-        dim3 gridDim(CEIL_DIV(M, 128), CEIL_DIV(N, 128));
+        dim3 gridDim(CEIL_DIV(N, 128), CEIL_DIV(M, 128));
         total_time = TIME_RECORD(repeat_times, ([&]{sgemm_v5<128, 128, 8, 8, 8><<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);}));
     }
     else if (kernel_num == 6) {
         dim3 blockDim(256);
-        dim3 gridDim(CEIL_DIV(M, 128), CEIL_DIV(N, 128));
+        dim3 gridDim(CEIL_DIV(N, 128), CEIL_DIV(M, 128));
         total_time = TIME_RECORD(repeat_times, ([&]{sgemm_v6<128, 128, 8, 8, 8><<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);}));
     }
     else if (kernel_num == 7) {
         dim3 blockDim(256);
-        dim3 gridDim(CEIL_DIV(M, 128), CEIL_DIV(N, 128));
+        dim3 gridDim(CEIL_DIV(N, 128), CEIL_DIV(M, 128));
         total_time = TIME_RECORD(repeat_times, ([&]{sgemm_v7<128, 128, 8, 8, 8><<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);}));
     } else {
         printf("Error: kernel %d not found.\n", kernel_num);

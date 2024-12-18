@@ -451,7 +451,7 @@ __global__ void transpose(float* input, float* output, int M, int N) {
 ```cpp
 // 输入矩阵是M行N列，输出矩阵是N行M列
 dim3 block(32, 32);
-dim3 grid(CEIL(M,32), CEIL(N,32));
+dim3 grid(CEIL(N,32), CEIL(M,32));  // 根据input的形状(M行N列)进行切块
 
 template <const int BLOCK_SIZE>
 __global__ void transpose(float* input, float* output, int M, int N) {
@@ -489,7 +489,7 @@ __global__ void transpose(float* input, float* output, int M, int N) {
 // 假设 M N K 已经赋值
 const int BLOCK_SIZE = 32;
 dim3 block(BLOCK_SIZE, BLOCK_SIZE);
-dim3 grid((M+BLOCK_SIZE-1)/BLOCK_SIZE, (N+BLOCK_SIZE-1)/BLOCK_SIZE);
+dim3 grid(CEIL(N, BLOCK_SIZE), CEIL(M, BLOCK_SIZE));  // 根据C矩阵的形状(M行N列)切块
 sgemm<<<grid, block>>>(d_A, d_B, d_C, M, N, K);
 
 __global__ void sgemm(float* A, float* B, float* C, int M, int N, int K) {
@@ -512,7 +512,7 @@ __global__ void sgemm(float* A, float* B, float* C, int M, int N, int K) {
 #define BLOCK_SIZE 32
 
 dim3 block(BLOCK_SIZE, BLOCK_SIZE);
-dim3 grid(CEIL(M,BLOCK_SIZE), CEIL(N,BLOCK_SIZE));
+dim3 grid(CEIL(N,BLOCK_SIZE), CEIL(M,BLOCK_SIZE));  // 根据C矩阵的形状(M行N列)切块
 sgemm<<<grid, block>>>(d_A, d_B, d_C, M, N, K);
 
 __global__ void sgemm(float* A, float* B, float* C, int M, int N, int K) {
@@ -560,7 +560,7 @@ __global__ void sgemm(float* A, float* B, float* C, int M, int N, int K) {
 
 ```cpp
 dim3 block(256);
-dim3 grid(CEIL(M,128), CEIL(N,128));
+dim3 grid(CEIL(N,128), CEIL(M,128));  // 根据C矩阵的形状(M行N列)切块
 sgemm<128, 128, 8, 8, 8><<<grid, block>>>(A,B,C,M,N,K);
 
 template<const int BM,
