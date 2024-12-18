@@ -181,7 +181,7 @@ int main() {
     cudaFree(d_output3);
     free(h_output3);
 
-    // --------------------------------call transpose_v3--------------------------------- //
+    // --------------------------------call transpose_v4--------------------------------- //
     float *d_output4;
     cudaMalloc((void **) &d_output4, sizeof(float) * N * M);                              // device输出内存
     float *h_output4 = (float *)malloc(sizeof(float) * N * M);                            // host内存, 用于保存device输出的结果
