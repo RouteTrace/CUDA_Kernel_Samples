@@ -42,7 +42,7 @@
 
 算子主要分两种写法：
 1. naive：每个线程负责一个元素的运算
-2. 使用**float4**等向量化访存方式：只对大规模数据有加速效果，需要注意，**要在 grid 上除以 4**，而不是在 block 上除以 4，否则会降低SM的占用率，可以参考👉[grid_size 和 block_size 选择](https://blog.csdn.net/LostUnravel/article/details/135721041)，grid_size 不小于 SM上最大同时执行的线程数/最大同时执行的线程块数 (Occupancy)，向量化存取的好处在于可以提高带宽利用率，减少缓存利用率。
+2. 使用**float4**等向量化访存方式：只对大规模数据有加速效果，需要注意，**要在 grid 上除以 4**，而不是在 block 上除以 4，否则会降低SM的占用率，可以参考👉[grid_size 和 block_size 选择](https://blog.csdn.net/LostUnravel/article/details/135721041)，grid_size 不小于 SM上最大同时执行的线程数/最大同时执行的线程块数 (Occupancy)，向量化存取的好处在于可以减少访存指令的数量，单位时间内读取的数据量变多，增大访存带宽。
 
 **源码文件夹**：[./elementwise](./elementwise)
 
