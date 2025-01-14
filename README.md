@@ -456,21 +456,21 @@ transpose<32><<<grid, block>>>(input, output, M, N);
 
 template <const int BLOCK_SIZE>
 __global__ void transpose(float* input, float* output, int M, int N) {
-    __shared__ float s_mem[BLOCK_SIZE][BLOCK_SIZE + 1];  // 避免bank conflict
+    __shared__ float s_mem[BLOCK_SIZE][BLOCK_SIZE];
     int bx = blockIdx.x * BLOCK_SIZE;
     int by = blockIdx.y * BLOCK_SIZE;
     int x1 = bx + threadIdx.x;
     int y1 = by + threadIdx.y;
 
     if (x1 < N && y1 < M) {
-        s_mem[threadIdx.y][threadIdx.x] = input[y1 * N + x1];
+        s_mem[threadIdx.y][threadIdx.x ^ threadIdx.y] = input[y1 * N + x1];
     }
     __syncthreads();
 
     int x2 = by + threadIdx.x;
     int y2 = bx + threadIdx.y;
     if (x2 < M && y2 < N) {
-        output[y2 * M + x2] = s_mem[threadIdx.x][threadIdx.y];  // padding后，不存在bank conflict
+        output[y2 * M + x2] = s_mem[threadIdx.x][threadIdx.x ^ threadIdx.y];  // swizzling后，不存在bank conflict
     }
 }
 ```
