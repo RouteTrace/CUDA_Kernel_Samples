@@ -15,24 +15,28 @@
 <img src="./assets/sharedMem.png" width = "800"/>
 </div>
 
-shared_memory 优化：
-1. device_transpose_v3：利用共享内存中转，读操作和写操作都是合并的，但是**存在bank conflict**
-2. device_transpose_v4：对**共享内存做padding**，解决bank conflict
+利用 shared_memory 优化 transpose：
+1. device_transpose_v3：利用共享内存中转，读操作和写操作都是合并的，但是**存在 bank conflict**
+2. device_transpose_v4：对**共享内存做padding**，解决 bank conflict
+3. device_transpose_v5：使用 **swizzling** 解决 bank conflict，不需要对共享内存做 padding
 
 ## 不同kernel的运行效率
-在 M = 12800, N = 1280, BLOCK_SIZE = 32 的情况下测试：
+在 GTX1050，M = 12800, N = 1280, BLOCK_SIZE = 32 的情况下测试：
 ```
-[device_transpose_v0] Average time: (6.871402) ms
-[device_transpose_v1] Average time: (4.286345) ms
-[device_transpose_v2] Average time: (2.131379) ms
-[device_transpose_v3] Average time: (3.809322) ms
-[device_transpose_v4] Average time: (2.037318) ms
+[device_transpose_v0] Average time: (6.859354) ms
+[device_transpose_v1] Average time: (4.310410) ms
+[device_transpose_v2] Average time: (2.117488) ms
+[device_transpose_v3] Average time: (3.805533) ms
+[device_transpose_v4] Average time: (2.035469) ms
+[device_transpose_v5] Average time: (2.023494) ms
 ```
 
 ## 参考 
 1. cuda编程基础与实践 (樊哲勇)
 2. [CUDA笔记-内存合并访问](https://zhuanlan.zhihu.com/p/641639133)
 3. [CUDA内存访问](https://zhuanlan.zhihu.com/p/632244210)
-4. https://blog.csdn.net/m0_46197553/article/details/125646380
-5. https://blog.csdn.net/LostUnravel/article/details/137613493
-6. https://blog.csdn.net/feng__shuai/article/details/114630831
+4. [CUDA:矩阵转置的GPU实现(Share Memory)](https://blog.csdn.net/m0_46197553/article/details/125646380)
+5. [[CUDA 学习笔记] 矩阵转置算子优化](https://blog.csdn.net/LostUnravel/article/details/137613493)
+6. [GPU的矩阵转置优化(transpose)](https://blog.csdn.net/feng__shuai/article/details/114630831)
+7. [CUDA-Shared-Memory-Swizzling](https://leimao.github.io/blog/CUDA-Shared-Memory-Swizzling/#CUDA-Shared-Memory-Swizzling)
+8. [关于 Bank Conflict 与 Swizzle](https://zhuanlan.zhihu.com/p/11132414477)

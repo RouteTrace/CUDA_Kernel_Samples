@@ -419,7 +419,7 @@ softmax_kernel<<<gird_size, block_size>>>(input, output, sum, max_val, N);
 
 **源码文件夹**：[./transpose](./transpose)
 
-naive：
+## naive
 ```cpp
 __global__ void transpose(float* input, float* output, int M, int N) {
     // input的row和col
@@ -432,7 +432,7 @@ __global__ void transpose(float* input, float* output, int M, int N) {
 }
 ```
 
-仅合并写入：
+## 仅合并写入
 ```cpp
 __global__ void transpose(float* input, float* output, int M, int N) {
     // output的row和col
@@ -445,9 +445,12 @@ __global__ void transpose(float* input, float* output, int M, int N) {
 }
 ```
 
-使用共享内存中转，同时合并读取和写入（**推荐**）：
+## （推荐）使用共享内存中转，同时合并读取和写入
 ![shareMem](./transpose/assets/sharedMem.png)
 
+需要注意的是，这种方式在读共享内存数据时会遇到经典的 bank conflict 问题，可通过 padding 或者 swizzling 的方式解决：
+
+对共享内存做padding：
 ```cpp
 // 输入矩阵是M行N列，输出矩阵是N行M列
 dim3 block(32, 32);
@@ -456,7 +459,35 @@ transpose<32><<<grid, block>>>(input, output, M, N);
 
 template <const int BLOCK_SIZE>
 __global__ void transpose(float* input, float* output, int M, int N) {
-    __shared__ float s_mem[BLOCK_SIZE][BLOCK_SIZE];
+    __shared__ float s_mem[BLOCK_SIZE][BLOCK_SIZE + 1];  // padding
+    int bx = blockIdx.x * BLOCK_SIZE;
+    int by = blockIdx.y * BLOCK_SIZE;
+    int x1 = bx + threadIdx.x;
+    int y1 = by + threadIdx.y;
+
+    if (x1 < N && y1 < M) {
+        s_mem[threadIdx.y][threadIdx.x] = input[y1 * N + x1];
+    }
+    __syncthreads();
+
+    int x2 = by + threadIdx.x;
+    int y2 = bx + threadIdx.y;
+    if (x2 < M && y2 < N) {
+        output[y2 * M + x2] = s_mem[threadIdx.x][threadIdx.y];  // padding后，此处不存在bank conflict
+    }
+}
+```
+
+使用 swizzling，不需要对共享内存做 padding：
+```cpp
+// 输入矩阵是M行N列，输出矩阵是N行M列
+dim3 block(32, 32);
+dim3 grid(CEIL(N,32), CEIL(M,32));  // 根据input的形状(M行N列)进行切块
+transpose<32><<<grid, block>>>(input, output, M, N);
+
+template <const int BLOCK_SIZE>
+__global__ void transpose(float* input, float* output, int M, int N) {
+    __shared__ float s_mem[BLOCK_SIZE][BLOCK_SIZE];  // 不需要padding
     int bx = blockIdx.x * BLOCK_SIZE;
     int by = blockIdx.y * BLOCK_SIZE;
     int x1 = bx + threadIdx.x;
@@ -470,7 +501,7 @@ __global__ void transpose(float* input, float* output, int M, int N) {
     int x2 = by + threadIdx.x;
     int y2 = bx + threadIdx.y;
     if (x2 < M && y2 < N) {
-        output[y2 * M + x2] = s_mem[threadIdx.x][threadIdx.x ^ threadIdx.y];  // swizzling后，不存在bank conflict
+        output[y2 * M + x2] = s_mem[threadIdx.x][threadIdx.x ^ threadIdx.y];  // swizzling后，此处不存在bank conflict
     }
 }
 ```
