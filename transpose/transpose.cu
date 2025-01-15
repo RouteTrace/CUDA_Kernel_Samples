@@ -91,6 +91,36 @@ __global__ void device_transpose_v4(const float* input, float* output, int M, in
     }
 }
 
+// 使用共享内存中转，合并读取+写入，使用swizzling解决bank conflict
+template <const int TILE_DIM>
+__global__ void device_transpose_v5(const float* input, float* output, int M, int N) {
+    __shared__ float S[TILE_DIM][TILE_DIM];  // 不做padding，使用swizzling解决bank conflict
+    const int bx = blockIdx.x * TILE_DIM;
+    const int by = blockIdx.y * TILE_DIM;
+    const int x1 = bx + threadIdx.x;
+    const int y1 = by + threadIdx.y;
+
+    if (y1 < M && x1 < N) {
+        S[threadIdx.y][threadIdx.x ^ threadIdx.y] = input[y1 * N + x1];  // 合并读取
+    }
+    __syncthreads();
+
+    const int x2 = by + threadIdx.x;
+    const int y2 = bx + threadIdx.y;
+    if (y2 < N && x2 < M) {
+        // swizzling主要利用了异或运算的以下两个性质来规避bank conflict：
+        // 1. 运算的封闭性  2. x1^y!=x2^y当且仅当x1!=x2
+        // 举例：
+        // 第一行的访存位置由0,0,0,0...变为0,1,2,3...
+        // 第二行的访存位置由1,1,1,1...变为1,0,3,2...
+        // 第三行的访存位置由2,2,2,2...变为2,3,0,1...
+        // 第四行的访存位置由3,3,3,3...变为3,2,1,0...
+        // 这样既能保证充分利用shared memory的空间（由于性质1和2）
+        // 又能保证warp中的各个线程不会访问同一bank（由于性质2）
+        output[y2 * M + x2] = S[threadIdx.x][threadIdx.x ^ threadIdx.y];  // 合并写入
+    }
+}
+
 int main() {
     // 输入是M行N列，转置后是N行M列
     size_t M = 12800;
@@ -143,7 +173,7 @@ int main() {
 
     verify_matrix(h_output1, h_matrix_tr_ref, M * N);                                     // 检查正确性
     printf("[device_transpose_v1] Average time: (%f) ms\n", total_time1 / repeat_times);  // 输出平均耗时
-    
+
     cudaFree(d_output1);
     free(h_output1);
 
@@ -177,7 +207,7 @@ int main() {
 
     verify_matrix(h_output3, h_matrix_tr_ref, M * N);                                     // 检查正确性
     printf("[device_transpose_v3] Average time: (%f) ms\n", total_time3 / repeat_times);  // 输出平均耗时
-    
+
     cudaFree(d_output3);
     free(h_output3);
 
@@ -194,9 +224,26 @@ int main() {
 
     verify_matrix(h_output4, h_matrix_tr_ref, M * N);
     printf("[device_transpose_v4] Average time: (%f) ms\n", total_time4 / repeat_times);
-    
+
     cudaFree(d_output4);
     free(h_output4);
+
+    // --------------------------------call transpose_v5--------------------------------- //
+    float *d_output5;
+    cudaMalloc((void **) &d_output5, sizeof(float) * N * M);                              // device输出内存
+    float *h_output5 = (float *)malloc(sizeof(float) * N * M);                            // host内存, 用于保存device输出的结果
+
+    dim3 block_size5(BLOCK_SIZE, BLOCK_SIZE);
+    dim3 grid_size5(CEIL(N, BLOCK_SIZE), CEIL(M, BLOCK_SIZE));                            // 根据input的形状(M行N列)进行切块
+    float total_time5 = TIME_RECORD(repeat_times, ([&]{device_transpose_v5<BLOCK_SIZE><<<grid_size5, block_size5>>>(d_matrix, d_output5, M, N);}));
+    cudaMemcpy(h_output5, d_output5, sizeof(float) * M * N, cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize();
+
+    verify_matrix(h_output5, h_matrix_tr_ref, M * N);
+    printf("[device_transpose_v5] Average time: (%f) ms\n", total_time5 / repeat_times);
+
+    cudaFree(d_output5);
+    free(h_output5);
 
     // ---------------------------------------------------------------------------------- //
     free(h_matrix_tr_ref);
