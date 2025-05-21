@@ -4,6 +4,7 @@
 
 #define FLOAT4(a) *(float4*)(&(a))
 #define CEIL(a,b) ((a+b-1)/(b))
+
 #define cudaCheck(err) _cudaCheck(err, __FILE__, __LINE__)
 void _cudaCheck(cudaError_t error, const char *file, int line) {
     if (error != cudaSuccess) {
@@ -17,7 +18,7 @@ void _cudaCheck(cudaError_t error, const char *file, int line) {
 __global__ void elementwise_add_float4(float* a, float* b, float* c, int N) {
     int idx = (blockDim.x * blockIdx.x + threadIdx.x) * 4;
     if (idx >= N) return;
-    
+        
     float4 tmp_a = FLOAT4(a[idx]);
     float4 tmp_b = FLOAT4(b[idx]);
     float4 tmp_c;
@@ -48,10 +49,12 @@ int main() {
     cudaCheck(cudaMemcpy(b_d, b_h, N * sizeof(float), cudaMemcpyHostToDevice));
 
     int block_size = 1024;
-    int grid_size = CEIL(CEIL(N,4), 1024);
+    int grid_size = CEIL(CEIL(N,4), 1024);// 简单理解为 计算需要多少个block, N/4 --> nums of float4. N/4 / 1024 --> grid_size(nums of block)
     elementwise_add_float4<<<grid_size, block_size>>>(a_d, b_d, c_d, N);
 
     cudaCheck(cudaMemcpy(c_h, c_d, N * sizeof(float), cudaMemcpyDeviceToHost));
+
+
     printf("a_h:\n");
     for (int i = 0; i < N; i++ ) {
         if (i == N-1) printf("%f\n", a_h[i]);

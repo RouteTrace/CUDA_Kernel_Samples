@@ -8,17 +8,17 @@ nvcc main.cu -o main
 输出：
 ```
 Device ID: 0
-       *Number of SMs: 5
-       Compute Capability Major: 6
-       Compute Capability Minor: 1
-       memoryBusWidth: 128
+       *Number of SMs: 108
+       Compute Capability Major: 8
+       Compute Capability Minor: 0
+       memoryBusWidth: 5120
        *maxThreadsPerBlock: 1024
        maxThreadsPerMultiProcessor: 2048
-       *totalGlobalMem: 2047M
+       *totalGlobalMem: 81228M
        sharedMemPerBlock: 48KB
-       *sharedMemPerMultiprocessor: 96KB
+       *sharedMemPerMultiprocessor: 164KB
        totalConstMem: 64KB
-       *multiProcessorCount: 5
+       *multiProcessorCount: 108
        *Warp Size: 32
 ```
 
